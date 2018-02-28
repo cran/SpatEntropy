@@ -1,0 +1,16 @@
+Package: SpatEntropy
+Type: Package
+Title: Spatial Entropy Measures
+Version: 0.1.0
+Author: L. Altieri, D. Cocchi, G. Roli
+Maintainer: L. Altieri <linda.altieri@unibo.it>
+Depends: R (>= 3.1.0), spatstat
+Description: The heterogeneity of spatial data presenting a finite number of categories can be measured via computation of spatial entropy. Functions are available for the computation of the main entropy and spatial entropy measures in the literature. They include the traditional version of Shannon's entropy, Batty's spatial entropy, O'Neill's entropy, Li and Reynolds' contagion index, Karlstrom and Ceccato's entropy, Leibovici's entropy, Parresol and Edwards' entropy and Altieri's entropy. References for all measures can be found under the topic 'SpatEntropy'. The package is able to work with lattice and point data. 
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+NeedsCompilation: no
+Packaged: 2018-02-28 09:04:10 UTC; linda.altieri4
+Repository: CRAN
+Date/Publication: 2018-02-28 16:51:14 UTC
