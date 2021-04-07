@@ -3,7 +3,6 @@
 \docType{package}
 \name{SpatEntropy}
 \alias{SpatEntropy}
-\alias{SpatEntropy-package}
 \title{SpatEntropy: a package for computing spatial entropy measures.}
 \description{
 The heterogeneity of spatial data presenting a finite number of categories
@@ -18,9 +17,14 @@ The package is able to work with lattice and point data.
 \details{
 References:
 
-Altieri, L., D. Cocchi, and G. Roli (2017). A new approach to spatial entropy
-measures, Environmental and Ecological Statistics published online at
-http://link.springer.com/article/10.1007/s10651-017-0383-1, pp 1-16.
+ALTIERI L., COCCHI D., ROLI G. (2019). Advances in spatial entropy measures.
+Stochastic Environmental Research and Risk Assessment
+
+ALTIERI L., COCCHI D., ROLI G. (2019). Measuring heterogeneity in urban expansion via spatial entropy.
+Environmetrics, 30(2), e2548
+
+ALTIERI L., COCCHI D., ROLI G. (2018). A new approach to spatial entropy measures.
+Environmental and Ecological Statistics, 25(1), 95-110
 
 Altieri, L., D. Cocchi, and G. Roli (2017). The use of spatial information in entropy measures.
 arXiv:1703.06001

@@ -1,9 +1,8 @@
 ###########################################
 #THIS FILE CONTAINS
 #1) function for partitioning the observation window in subareas
-#2) function for plotting the area partition, with or without data
-#3) function for computing Batty's entropy
-#4) function for computing Karlstrom and Ceccato's entropy
+#2) function for computing Batty's entropy
+#3) function for computing Karlstrom and Ceccato's entropy
 ###########################################
 
 ###########################################
@@ -12,456 +11,479 @@
 #'Area partition.
 #'
 #'This function partitions the observation area in a number of sub-areas,
-#'and assigns the data points/pixels to the areas.
+#'and assigns the data points/pixels to the areas. This function is useful either
+#'when a random partition wants to be created, or when the user wants to set the
+#'area's centroids and is happy with an area tessellation in Voronoi polygons according
+#'to the defined centroids.
 #'
+#'The function is preliminary to the computation of Batty's or Karlstrom and Ceccato's entropy.
 #'An event of interest (in the form of a point or binary areal dataset) occurs
 #'over an observation area divided into sub-areas. If the partition is random,
 #'this function generates the sub-areas by randomly drawing the areas' centroids
 #'over the observation window. Then, data points/pixels are assigned to the area with
-#'the closest centroid.
+#'the closest centroid. When data are pixels, each pixel is assigned to an area according to
+#'the coordinates of its own centroid.
+#'The function also works for non-binary datasets and marked ppp objects.
 #'
-#' @param win The observation area, an object of class \code{owin}, see package `spatstat`.
+#' @param data If data are lattice, a data matrix, which can be numeric, factor, character, ...
+#'   If the dataset is a point pattern, `data` is a \code{ppp} object.
+#' @param   cell.size A single number. If data are lattice, the length of the side of each pixel.
+#'   Default to 1. Ignored if data are points.
 #' @param G An integer if sub-areas are randomly generated, determining the number \eqn{G} of sub-areas.
-#'          Alternatively, a \eqn{G}x\eqn{2} matrix with the sub-areas centroids' coordinates.
-#' @param data.coords A two column matrix. If the dataset is a point pattern,
-#'                    the point coordinates. If the dataset is a raster/pixel matrix,
-#'                    the centroids' coordinates, provided by user or returned by [coords_pix()].
+#'          Alternatively, a 2-column matrix with the sub-areas centroids' coordinates.
 #'
 #' @return A list with elements:
 #'\itemize{
-#'   \item `G.coords` a point pattern containing the \eqn{G} areas' centroids
-#'   \item `data.assign` a three column matrix, where each pair of data coordinates is
-#'   matched to one of the \eqn{G} areas (numbered 1 to \eqn{G}).
+#'   \item `G.pp` a point pattern containing the \eqn{G} areas' centroids
+#'   \item `data.assign` a four column matrix, with all pairs of data coordinates and data values
+#'   matched to one of the \eqn{G} areas (numbered 1 to \eqn{G}). If the dataset is an unmarked ppp
+#'   object, the data category column is a vector of 1s.
 #'   }
 #'
 #' @examples
 #' #LATTICE DATA
-#' #random generation of areas
-#' ccc=coords_pix(area=square(10), nrow=10, ncol=10)
-#' partition=areapart(square(10), G=5, data.coords=ccc)
+#'
+#' data=matrix(sort(sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
+#' partition=areapart(data, G=5)
+#' partition=areapart(data, G=5, cell.size=2)
+#' ##to plot
+#' #data
+#' plot(as.im(data, W=partition$G.pp$window), main="",
+#'      col=gray(seq(1,0,l=length(unique(c(data)[!is.na(c(data))])))))
+#' #partition centroids
+#' plot(partition$G.pp, add=TRUE, pch=16, col=2)
+#' #partition tessellation
+#' plot(dirichlet(partition$G.pp), add=TRUE, border=2)
 #'
 #' #providing a pre-fixed area partition
-#' win=square(10)
-#' G=5
-#' GG=cbind(runif(G, win$xrange[1], win$xrange[2]),
-#'          runif(G, win$yrange[1], win$yrange[2]))
-#' ccc=coords_pix(area=win, pixel.xsize = 2, pixel.ysize = 2)
-#' partition=areapart(win, G=GG, data.coords=ccc)
+#' data=matrix(sort(sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
+#' win=square(nrow(data))
+#' GG=cbind(runif(5, win$xrange[1], win$xrange[2]),
+#'          runif(5, win$yrange[1], win$yrange[2]))
+#' partition=areapart(data, G=GG)
 #'
 #' #POINT DATA
-#' #random generation of areas
-#' data.pp=runifpoint(100, win=square(10))
-#' marks(data.pp)=sample(c("a","b","c"), 100, replace=TRUE)
-#' ccc=coords(data.pp)
-#' partition=areapart(square(10), G=4, data.coords=ccc)
 #'
-#' #providing a pre-fixed area partition
-#' win=square(10)
-#' G=4
-#' GG=cbind(runif(G, win$xrange[1], win$xrange[2]),
-#'          runif(G, win$yrange[1], win$yrange[2]))
-#' data.pp=runifpoint(100, win=win)
-#' marks(data.pp)=sample(c("a","b","c"), 100, replace=TRUE)
-#' ccc=coords(data.pp)
-#' partition=areapart(win, G=GG, data.coords=ccc)
+#' data=ppp(x=runif(100), y=runif(100), window=square(1))
+#' partition=areapart(data, 10)
+#' #to plot
+#' plot(data)
+#' plot(partition$G.pp, add=TRUE, col=2, pch=16)
+#' plot(dirichlet(partition$G.pp), add=TRUE, border=2)
 #'
-#' #for plotting the area partiton
-#' ?plot_areapart
+#' #with marks
+#' data=ppp(x=runif(100), y=runif(100), window=square(1),
+#'          marks=(sample(c("a","b","c"), 100, replace=TRUE)))
+#' GG=cbind(runif(10, data$window$xrange[1], data$window$xrange[2]),
+#'          runif(10, data$window$yrange[1], data$window$yrange[2]))
+#' partition=areapart(data, G=GG)
 #'
 #' @export
 
-areapart=function(win, G, data.coords){
+areapart=function(data, G, cell.size=1){
+
+  if(!is.matrix(data) & !spatstat.geom::is.ppp(data))
+    stop("For grid data, please provide the dataset as a matrix;
+        for point pattern data, please provide the dataset as a ppp object")
+
+  if(is.matrix(data))
+  {
+    ncl=ncol(data); nrw=nrow(data)
+    W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
+    xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), l=ncl)
+    yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), l=nrw))
+    coords=expand.grid(yy.c, xx.c)
+    data.pp=spatstat.geom::ppp(x=coords[,2], y=coords[,1], window=W)
+    spatstat.geom::marks(data.pp)=c(data)
+  }
+
+  if (spatstat.geom::is.ppp(data)) {
+    W=data$window
+    data.pp=data
+    if(is.null(spatstat.geom::marks(data))) spatstat.geom::marks(data.pp)=rep(1, spatstat.geom::npoints(data))
+  }
+
+
   if(length(G)==1){
     #areas' centroids
-    dummy=spatstat::runifpoint(G, win)
-    dummy.coord=cbind(x=dummy$x, y=dummy$y, id=1:G)} else {
-
-      dummy=spatstat::ppp(G[,1], G[,2], win)
-      dummy.coord=cbind(x=dummy$x, y=dummy$y, id=1:nrow(G))
-    }
-
-  #create data point pattern
-  data.pp=spatstat::ppp(data.coords[,1], data.coords[,2], window=win)
+    part.pp=spatstat.core::runifpoint(G, W)
+    part.coord=cbind(x=part.pp$x, y=part.pp$y, id=1:G)
+  } else {
+    if(min(G[,1])<W$xrange[1]|max(G[,1])>W$xrange[2]|
+       min(G[,2])<W$yrange[1]|max(G[,2])>W$yrange[2])
+      stop("The given coordinates for the area partition are outside the boundaries of the data observation window")
+    part.pp=spatstat.geom::ppp(G[,1], G[,2], W)
+    part.coord=cbind(x=part.pp$x, y=part.pp$y, id=1:nrow(G))
+  }
 
   #match data to the nearest area centroid
-  near.neigh=spatstat::nncross(data.pp, dummy)
-  data.coord.area=cbind(data.coords, near.neigh$which)
-  colnames(data.coord.area)=c("x", "y", "area")
+  near.neigh=spatstat.geom::nncross(data.pp, part.pp)
+  data.coord.area=data.frame(data.pp$x, data.pp$y, data.pp$marks, near.neigh$which)
+  colnames(data.coord.area)=c("x", "y", "cat", "area")
 
-  return(list(G.coords=dummy, data.assign=data.coord.area))
+  return(list(G.pp=part.pp, data.assign=data.coord.area))
 }
 ###########################################
 
-
 ###########################################
-#2) plot the area partition
-
-#'Plot area partition.
-#'
-#'This function plots an area partition into sub-areas,
-#'generated by [areapart()].
-#'
-#'This function allows to plot a fixed or randomly generated area partition,
-#'such as the one produced by [areapart()]. The plot changes according
-#'to a few options: the partition may be plotted with or without data,
-#'with or without colour filling. When data present multiple categories,
-#'one can choose to plot the category of interest together with the
-#'partition. If the data are points, the Dirichlet tessellation
-#'is plotted (see \code{dirichlet} in the package `spatstat`).
-#'If the data are pixels, the partition follows the pixel borders.
-#'
-#' @param data.assign A three column matrix, containing the data coordinates (centroids, when pixels)
-#'                    and the id of the corresponding sub-area.
-#'                    Provided by user or returned by [areapart()].
-#' @param win The observation area, an object of class \code{owin} (see package \code{spatstat}).
-#' @param is.pointdata Logical: \code{T} if data are a point pattern, \code{F} if they are pixels.
-#' @param add.data Logical: \code{F} (default) if only the area partition is plotted, \code{T} if
-#'   data are added to the area partition plot.
-#' @param data.bin Logical, only used when `add.data=TRUE`: \code{T} (default) if
-#'   the plot displays the dichotomized version of the dataset, according to the category of interest.
-#' @param category A character string. The exact name of the category of interest for Batty's
-#'   or Karlstrom and Ceccato's spatial entropy, as in `data`.
-#'   Only used when `add.data=TRUE` and `data.bin=TRUE`.
-#' @param data A data matrix for lattice data, or a \code{ppp} object for point data (see package \code{spatstat}).
-#' @param G.coords A two column matrix with the coordinates of the sub-areas centroids.
-#'                 Only needed if `data` is a point pattern.
-#' @param main Optional, a character string with the plot main title.
-#' @param ribbon Logical, whether to display a ribbon showing the colour map.
-#'
-#' @return A plot of the partition in sub-areas, according to the chosen options.
-#'
-#' @examples
-#' #LATTICE DATA
-#' data.lat=matrix(sample(c("a","b","c"), 100, replace=TRUE), nrow=10)
-#' ccc=coords_pix(area=square(10), nrow=10, ncol=10)
-#' partition=areapart(square(10), G=5, data.coords=ccc)
-#' #plot without data
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=FALSE,
-#' add.data=FALSE, data=data.lat, G.coords=partition$G.coords, main="")
-#' #plot with data
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=FALSE,
-#' add.data=TRUE, data=data.lat, G.coords=partition$G.coords, main="")
-#' #plot with data - dichotomize data according to a category of interest
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=FALSE,
-#' add.data=TRUE, data.bin=TRUE, category="a",
-#' data=data.lat, G.coords=partition$G.coords, main="")
-#'
-#' #POINT DATA
-#' data.pp=runifpoint(100, win=square(10))
-#' marks(data.pp)=sample(c("a","b","c"), 100, replace=TRUE)
-#' ccc=coords(data.pp)
-#' partition=areapart(square(10), G=4, data.coords=ccc)
-#' #plot without data
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=TRUE,
-#' add.data=FALSE, data=data.pp, G.coords=partition$G.coords, main="")
-#' #plot with data
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=TRUE,
-#' add.data=TRUE, data=data.pp, G.coords=partition$G.coords, main="")
-#' #plot with data - dichotomize data according to a category of interest
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=TRUE,
-#' add.data=TRUE, data.bin=TRUE, category="a",
-#' data=data.pp, G.coords=partition$G.coords, main="")
-#'
-#' @export
-
-plot_areapart=function(data.assign, win, is.pointdata=FALSE, add.data=FALSE, data.bin=FALSE,
-                       category=NULL, data,
-                       G.coords=NULL, main="", ribbon=TRUE)
-{
-  if(is.pointdata==F) #draw areas over pixel matrix
-  {
-    #create segments for area plot
-    nrw=length(unique(data.assign[,2]))
-    ncl=length(unique(data.assign[,1]))
-    halfpix.x=min(abs(diff(data.assign[,2]))[abs(diff(data.assign[,2]))>0])/2
-    halfpix.y=min(abs(diff(data.assign[,1]))[abs(diff(data.assign[,1]))>0])/2
-    below.bord=right.bord=numeric(nrow(data.assign))
-    for (i in 1:(nrow(data.assign)-1))
-      if (data.assign[i,3]!=data.assign[(i+1),3]) below.bord[i]=1
-    #below.bord is 1 if a pixel is assigned to an area different than the area of the pixel below
-    for (i in 1:(nrow(data.assign)-nrw))
-      if (data.assign[i,3]!=data.assign[(i+nrw),3]) right.bord[i]=1
-    #right.bord is 1 if a pixel is assigned to an area different than the area of the pixel at the right
-    below.bord.x.start=data.assign[below.bord==1,1]-halfpix.y
-    below.bord.x.end=data.assign[below.bord==1,1]+halfpix.y
-    below.bord.y.start=below.bord.y.end=data.assign[below.bord==1,2]-halfpix.x
-    right.bord.x.start=right.bord.x.end=data.assign[right.bord==1,1]+halfpix.y
-    right.bord.y.start=data.assign[right.bord==1,2]+halfpix.x
-    right.bord.y.end=data.assign[right.bord==1,2]-halfpix.x
-
-    datamat.areas=matrix(data.assign[,3], nrow(data), ncol(data))
-
-    #plot
-    if(add.data==F)
-    {
-      plot_lattice(datamat.areas, win, gray.ext=c(1, 0), main=main, ribbon=ribbon)
-      graphics::segments(x0=below.bord.x.start, y0=below.bord.y.start, x1=below.bord.x.end, y1=below.bord.y.end)
-      graphics::segments(x0=right.bord.x.start, y0=right.bord.y.start, x1=right.bord.x.end, y1=right.bord.y.end)
-    } else {
-      if (data.bin==T){
-        datavec=c(data)
-        datavec[c(data)==category]=1
-        datavec[c(data)!=category]=0
-        data2=matrix(datavec, nrow(data), ncol(data))
-      } else data2=data
-      plot_lattice(data2, win, gray.ext=c(1, .3), main=main, ribbon=ribbon)
-      graphics::segments(x0=below.bord.x.start, y0=below.bord.y.start, x1=below.bord.x.end, y1=below.bord.y.end, lwd=3)
-      graphics::segments(x0=right.bord.x.start, y0=right.bord.y.start, x1=right.bord.x.end, y1=right.bord.y.end, lwd=3)
-    }
-
-  } else { #for a point pattern
-
-    if (is.null(G.coords)) cat("ERROR: centroid coordinates of the G sub-areas must be provided")
-    if (spatstat::is.ppp(G.coords)) {
-      dirich=spatstat::dirichlet(G.coords)} else{
-        G.pp=spatstat::ppp(G.coords[,1], G.coords[,2], window=win)
-        dirich=spatstat::dirichlet(G.pp)}
-
-    if (add.data==F){
-      spatstat::plot.tess(dirich, main=main)
-    } else{
-      spatstat::plot.tess(dirich, main=main)
-      if (data.bin==T){
-        ind=which(spatstat::marks(data)==category)
-        bindata.pp=spatstat::ppp(data$x[ind], data$y[ind], data$win)
-        spatstat::plot.ppp(bindata.pp, add=TRUE, pch=19)
-      } else spatstat::plot.ppp(data, add=TRUE)
-    }
-  }
-}
-###########################################
-
-
-###########################################
-#3) batty
+#2) batty
 
 #'Batty's entropy.
 #'
-#'This function computes Batty's spatial entropy, following Batty (1976), see also Altieri et al (2017)
+#'This function computes Batty's spatial entropy, following Batty (1976), see also Altieri et al (2017 and following)
 #'(references are under the topic \code{\link{SpatEntropy}}).
 #'
 #'Batty's spatial entropy measures the heterogeneity in the spatial distribution
 #'of a phenomenon of interest, with regard to an area partition. It is high
 #'when the phenomenon is equally intense over the sub-areas, and low when
-#'it concentrates in one or few sub-areas. This function starts from the output
-#'of [areapart()] and allows to compute Batty's entropy as
-#'\deqn{H=\sum p_g \log(T_g/p_g)}
+#'it concentrates in one or few sub-areas. This function allows to compute Batty's entropy as
+#'\deqn{H_B=\sum p_g \log(T_g/p_g)}
 #'where \eqn{p_g} is the probability of occurrence of the phenomenon over sub-area \eqn{g},
 #'and \eqn{T_g} is the sub-area size.
 #'When data are categorical, the phenomenon of interest corresponds to
 #'one category, which must be specified. If data are an unmarked
-#'point pattern, a fake mark vector must be created with the same category for all points.
+#'point pattern, a fake mark vector is be created with the same category for all points.
+#'For comparison purposes, the relative version of Batty's entropy is also returned, i.e.
+#'Batty's entropy divided by its maximum \eqn{\log(\sum T_g)}.
+#'Note that when the total observation area is 1, then \eqn{\log(\sum T_g)=0}, therefore
+#'in that case during the computation all \eqn{T_g}s are multiplied by 100 and a warning is produced.
+#'The function is able to work with grids containing missing data, specified as NA values.
+#'All NAs are ignored in the computation.
 #'
-#' @param data A data matrix or vector, can be numeric, factor, character, ...
-#'   If the dataset is a point pattern, `data` is the mark vector.
-#' @param data.assign A three column matrix, containing the data coordinates (centroids when pixels)
-#'   and the id of the corresponding sub-area. Provided by user or returned by [areapart()].
-#' @param is.pointdata Logical: \code{T} if data are a point pattern, \code{F} if they are pixels.
-#' @param category A character string, the exact name of the category for which Batty's spatial
-#'                 entropy is computed, as in `data`.
-#' @param win An \code{owin} object (see package \code{spatstat}), the observation area.
-#'            Only needed for lattice data.
-#' @param G.coords A point pattern (an object of class \code{ppp} see package \code{spatstat}),
-#'                 or a two column matrix with the area centroids' coordinates.  Provided by user or returned by [areapart()].
+#' @param data If data are lattice, a data matrix, which can be numeric, factor, character, ...
+#'   If the dataset is a point pattern, `data` is a \code{ppp} object.
+#' @param category A single value matching the data category of interest for computing Batty's entropy.
+#'  Default to 1. If the dataset is an unmarked point pattern, this argument must not be changed from the default.
+#' @param cell.size A single number. If data are lattice, the length of the side of each pixel.
+#'   Default to 1. Ignored if data are points.
+#' @param partition Input defining the partition into subareas. If an integer, it defines the
+#' number of sub-areas that are randomly generated by [areapart]; if a two column matrix
+#' with coordinates, they are the centroids of the subareas built by [areapart]. Alternatively,
+#' it can be the output of [areapart], or a \code{tess} object built by the user.
+#' The default option is \code{partition=areapart(data, G=10)}, which generates 10 random sub-areas.
 #'
-#' @return Batty's spatial entropy value, as well as a table with information
-#'   about each sub-area:
+#' @return A list of four elements:
 #'\itemize{
-#'   \item `area.id` the sub-area id
-#'   \item `abs.freq` the number of points/pixels presenting the category of interest
+#'   \item `area.tess` a \code{tess} object with the area partition
+#'   \item `areas.freq` a dataframe giving, for each sub-area, the absolute and relative frequency of
+#'   the points/pixels of interest and the sub-area size
 #'     for each sub-area
-#'   \item `rel.freq` the proportion of points/pixels presenting the category of interest
-#'     in each sub-area, with regard to the total number of points/pixels with the
-#'     category of interest
-#'   \item `Tg` the sub-area size.
+#'   \item `batty` Batty's entropy
+#'   \item `rel.batty` Batty's entropy divided by \eqn{\log(\sum Tg)} for comparison across observation areas.
 #'}
 #'
 #' @examples
 #' #LATTICE DATA
-#' data.lat=matrix(sample(c("a","b","c"), 100, replace=TRUE), nrow=10)
-#' ccc=coords_pix(area=square(10), nrow=10, ncol=10)
-#' partition=areapart(square(10), G=5, data.coords=ccc)
-#' batty(data.lat, partition$data.assign, category="a",
-#' win=square(10), G.coords=partition$G.coords)
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=FALSE,
-#' add.data=TRUE, data.bin=TRUE, category="a",
-#' data=data.lat, G.coords=partition$G.coords, main="")
+#'
+#' data=matrix((sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
+#' batty.entropy=batty(data, category="a")
+#' ##to plot
+#' data.binary=matrix(as.numeric(data=="a"), nrow(data))
+#' plot(as.im(data.binary, W=batty.entropy$areas.tess$window), main="",
+#'      col=gray(seq(1,0,l=length(unique(c(data.binary))))), ribbon=FALSE)
+#' plot(batty.entropy$areas.tess, add=TRUE, border=2)
 #'
 #' #POINT DATA
-#' data.pp=runifpoint(100, win=square(10))
-#' marks(data.pp)=sample(c("a","b","c"), 100, replace=TRUE)
-#' ccc=coords(data.pp)
-#' partition=areapart(square(10), G=4, data.coords=ccc)
-#' batty(marks(data.pp), partition$data.assign, is.pointdata=TRUE,
-#' category="b", G.coords=partition$G.coords)
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=TRUE,
-#' add.data=TRUE, data.bin=TRUE, category="b",
-#' data=data.pp, G.coords=partition$G.coords, main="")
+#'
+#' #unmarked pp
+#' data=ppp(x=runif(100, 0, 10), y=runif(100, 0, 10), window=square(10))
+#' batty.entropy=batty(data)
+#' ##to plot
+#' plot(data)
+#' plot(batty.entropy$areas.tess, add=TRUE, border=2)
+#'
+#' #marked pp
+#' data=ppp(x=runif(100, 0, 10), y=runif(100, 0, 10), window=square(10),
+#'          marks=(sample(1:5, 100, replace=TRUE)))
+#' plot(data) #see ?plot.ppp for options
+#' #if you want to compute the entropy on all points
+#' batty.entropy=batty(unmark(data))
+#' #if you want to compute the entropy on a category, say 3
+#' batty.entropy=batty(data, category=3)
+#' ##to plot using the selected category
+#' ind=which(marks(data)==3)
+#' data.binary=unmark(data[ind])
+#' plot(data.binary)
+#' plot(batty.entropy$areas.tess, add=TRUE, border=2)
 #'
 #' @export
 
-batty=function(data, data.assign, is.pointdata=FALSE, category, win=NULL, G.coords){
+batty=function(data, category=1, cell.size=1, partition=10){
+
+  if(!is.matrix(data) & !spatstat.geom::is.ppp(data))
+    stop("For grid data, please provide the dataset as a matrix;
+        for point pattern data, please provide the dataset as a ppp object")
 
   #dichotomize dataset according to the category of interest
-  if(is.factor(data)) data=as.character(data)
-  datavec=c(data)
-  datavec[c(data)==category]=1
-  datavec[c(data)!=category]=0
-  datavec=as.numeric(datavec)
+  if(spatstat.geom::is.ppp(data) & !spatstat.geom::is.marked(data) & category!=1)
+    stop("Since data do not have different categories, please set category to the default 1")
+  if(is.matrix(data)) datavec=c(data) else
+    if(spatstat.geom::is.marked(data)) datavec=spatstat.geom::marks(data) else
+      datavec=rep(1, spatstat.geom::npoints(data))
+    if(is.factor(datavec)) datavec=as.character(datavec)
+    if(length(which(unique(datavec)==category))==0)
+      stop("Please choose a category that is present in the dataset.
+           If the point pattern is unmarked, category must be set to 1")
+    datavec=as.numeric(datavec==category)
+    datavec[is.na(datavec)]=0
 
-  #match data values and coordinates
-  data.cat=cbind(data.assign, datavec)
-  ch=sum(datavec) #total number of 1s
+    #create data ppp object
+    if(is.matrix(data))
+    {
+      ncl=ncol(data); nrw=nrow(data)
+      W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
+      xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), l=ncl)
+      yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), l=nrw))
+      coords=expand.grid(yy.c, xx.c)
+      data.pp=spatstat.geom::ppp(x=coords[,2], y=coords[,1], window=W)
+      spatstat.geom::marks(data.pp)=datavec
+    }
+    if (spatstat.geom::is.ppp(data)) {
+      W=data$window
+      data.pp=data
+      spatstat.geom::marks(data.pp)=datavec
+    }
 
-  #Gx2 table matching each area id to the number of 1 values in it
-  if(spatstat::is.ppp(G.coords))
-    G.count=1:(spatstat::npoints(G.coords)) else G.count=1:nrow(G.coords)
-  sums=by(data.cat[,4],data.cat[,3], sum); sums=cbind(as.numeric(names(sums)), as.numeric(sums))
-  col2=numeric(length(G.count))
-  for(i in 1:length(G.count))
-  { ind=which(sums[,1]==i)
-  if(length(ind)>0) col2[i]=sums[which(sums[,1]==i),2]}
-  G.count=cbind(G.count, col2)
+    #prepare the structure of object area partition as a tessellation
+    if(is.numeric(partition) | is.matrix(partition))
+      areap=spatstat.geom::dirichlet(areapart(data, G=partition, cell.size=cell.size)$G.pp) else
+        if(is.list(partition)) {
+          if(names(partition)[1]=="G.pp" & names(partition)[2]=="data.assign")
+            areap=spatstat.geom::dirichlet(partition$G.pp)
+          if(names(partition)[1]=="tiles" & names(partition)[2]=="n")
+            areap=partition
+        } else
+          if(spatstat.geom::is.tess(partition)) {
+            if(partition$window$xrange[1]!=W$xrange[1] | partition$window$xrange[2]!=W$xrange[2] |
+               partition$window$yrange[1]!=W$yrange[1] | partition$window$yrange[2]!=W$yrange[2])
+              stop("The given partition is not on the same observation window as the data")
+            if(is.null(partition$tiles)) stop("If a tessellation is provided, it should contain tiles")
+            areap=partition
+          } else stop("please provide the area partition object in an accepted format.
+                      If a tessellation is provided, it should contain tiles")
 
-  #add relative frequencies
-  G.count=cbind(G.count, G.count[,2]/ch)
 
-  #add Tg=sub-areas size
-  if(is.pointdata==F){
-    pix.size=spatstat::area.owin(win)/length(c(data))
-    Tg=as.numeric(table(data.cat[,3]))*pix.size
-    G.count=cbind(G.count, Tg)
-  } else{
-    if (spatstat::is.ppp(G.coords)) {
-      dirich=spatstat::dirichlet(G.coords)} else{
-        G.pp=spatstat::ppp(G.coords[,1], G.coords[,2], window=win)
-        dirich=spatstat::dirichlet(G.pp)}
-    Tg=as.numeric(lapply(dirich$tiles, spatstat::area.owin))
-    G.count=cbind(G.count, Tg)
-  }
 
-  colnames(G.count)=c("area.id", "abs.freq", "rel.freq", "Tg")
+    n.G=areap$n
+    tot.pG=sum(datavec)
+    pg=Tg=numeric(n.G)
+    for(gg in 1:n.G)
+    {
+      subd=data.pp[areap$tiles[[gg]]]
+      datatab=table(spatstat.geom::marks(subd))
+      if(length(datatab[which(names(datatab)==1)])==1)
+        pg[gg]=datatab[which(names(datatab)==1)]/tot.pG
+      Tg[gg]=spatstat.geom::area.owin(areap$tiles[[gg]])
+      if(is.na(Tg[gg]))
+        Tg[gg]=table(areap$tiles[[gg]]$m)[which(names(table(areap$tiles[[gg]]$m))==T)]*
+        spatstat.geom::area.owin(data.pp$window)/(nrow(areap$tiles[[gg]]$m)*ncol(areap$tiles[[gg]]$m))
+    }
+    G.count=data.frame(1:n.G, pg*tot.pG, pg, Tg)
+    colnames(G.count)=c("area.id", "abs.freq", "rel.freq", "area.size")
 
-  #batty
-  batty.terms=ifelse(G.count[,3]>0,G.count[,3]*log(G.count[,4]/G.count[,3]),0)
-  batty.ent=sum(batty.terms)
+    if(sum(Tg)==1)
+    {
+      Tg=Tg*100
+      warning("The total observation area is 1, which returns problems in the computation of Batty's entropy, since the maximum is log(1)=0.
+      For this reason, during the computation all areas are multiplied by 100." )
+    }
 
-  return(list(batty.table=G.count, batty.ent=batty.ent))
+    #batty
+    batty.terms=ifelse(G.count[,2]>0,G.count[,3]*log(Tg/G.count[,3]),0)
+    batty.ent=sum(batty.terms)
+
+    return(list(areas.tess=areap, areas.freq=G.count, batty=batty.ent, rel.batty=batty.ent/log(sum(Tg))))
 }
-###########################################
 
 
+
 ###########################################
-#4) karlstrom
+#3) karlstrom
 
 #'Karlstrom and Ceccato's entropy.
 #'
 #'This function computes Karlstrom and Ceccato's spatial entropy for a
 #'chosen neighbourhood distance,
-#'following Karlstrom and Ceccato (2002), see also Altieri et al (2017)
+#'following Karlstrom and Ceccato (2002), see also Altieri et al (2017) and following works
 #'(references are under the topic \code{\link{SpatEntropy}}).
 #'
 #'Karlstrom and Ceccato's spatial entropy measures the heterogeneity in the spatial distribution
 #'of a phenomenon of interest, with regard to an area partition and accounting for the neighbourhood.
-#'It is similar to Batty's entropy (see [batty()]) discarding the sub-area size,
+#'It is similar to Batty's entropy (see [batty]) discarding the sub-area size,
 #'with the difference that the probability of occurrence of the phenomenon over area \eqn{g}
 #'is actually a weighted sum of the neighbouring probabilities.
+#'\deqn{H_{KC}=\sum p_g \log(1/ \tilde{p}_g)}
+#'where \eqn{p_g} is the probability of occurrence of the phenomenon over sub-area \eqn{g},
+#'and \eqn{\tilde{p}_g} is the averaged probability over the neighbouring areas (including the g-th area itself).
 #'When data are categorical, the phenomenon of interest corresponds to
 #'one category, which must be specified. If data are an unmarked
-#'point pattern, a fake mark vector must be created with the same category for all points.
+#'point pattern, a fake mark vector is be created with the same category for all points.
+#'For comparison purposes, the relative version of Karlstrom and Ceccato's entropy is also returned, i.e.
+#'Karlstrom and Ceccato's entropy divided by its maximum log(number of sub-areas).
+#'The function is able to work with grids containing missing data, specified as NA values.
+#'All NAs are ignored in the computation.
 #'
-#' @param data A data matrix or vector, can be numeric, factor, character, ...
-#'   If the dataset is a point pattern, `data` is the mark vector.
-#' @param data.assign A three column matrix, containing the data coordinates (centroids when pixels)
-#'   and the id of the corresponding sub-area. Provided by user or returned by [areapart()].
-#' @param category A character string, the exact name of the category for which Karlstrom and Ceccato's spatial
-#'   entropy is computed, as in `data`.
-#' @param G.coords A point pattern (an object of class \code{ppp} see package \code{spatstat}),
-#'                 or a two column matrix with the area centroids' coordinates.  Provided by user or returned by [areapart()].
-#' @param neigh.dist A scalar, the chosen neighbourhood Euclidean distance.
+#' @param data If data are lattice, a data matrix, which can be numeric, factor, character, ...
+#'   If the dataset is a point pattern, `data` is a \code{ppp} object.
+#' @param category A single value matching the data category of interest for computing Batty's entropy.
+#'  Default to 1. If the dataset is an unmarked point pattern, this argument must not be changed from the default.
+#' @param cell.size A single number. If data are lattice, the length of the side of each pixel.
+#'   Default to 1. Ignored if data are points.
+#' @param partition Input defining the partition into subareas. If an integer, it defines the
+#' number of sub-areas that are randomly generated by [areapart]; if a two column matrix
+#' with coordinates, they are the centroids of the subareas built by [areapart]. Alternatively,
+#' it can be the output of [areapart], or a \code{tess} object built by the user.
+#' The default option is \code{partition=areapart(data, G=10)}, which generates 10 random sub-areas.
+#' @param neigh A single number. It can be either the number of neighbours for each sub-area
+#' (including the area itself). or the Euclidean distance to define which sub-areas are neighbours,
+#' based on their centroids. Default to 4 neighbours.
+#' @param method Character, it guides the interpretation of \code{neigh}. Either "number" (the default)
+#' or "distance".
 #'
-
-
-#' @return Karlstrom and Ceccato's spatial entropy value as well as a table with information about each sub-area:
+#' @return A list of four elements:
 #'\itemize{
-#'   \item `area.id` the sub-area id
-#'   \item `abs.freq` the number of points/pixels presenting the category of interest
+#'   \item `area.tess` a \code{tess} object with the area partition
+#'   \item `areas.freq` a dataframe giving, for each sub-area, the absolute and relative frequency of
+#'   the points/pixels of interest, the weighted probabilities of the neighbours and the sub-area size
 #'     for each sub-area
-#'   \item `rel.freq` the proportion of points/pixels presenting the category of interest
-#'     in each sub-area, with regard to the total number of points/pixels with the
-#'     category of interest
-#'   \item `p.tilde` the probability of occurrence over area \eqn{g} weighted with its neighbours.
+#'   \item `karlstrom` Karlstrom and Ceccato's entropy
+#'   \item `rel.karl` Karlstrom and Ceccato's entropy divided by \eqn{\log(G)} (number og sub-areas) for comparison across observation areas.
 #'}
 #'
 #' @examples
 #' #LATTICE DATA
-#' data.lat=matrix(sample(c("a","b","c"), 100, replace=TRUE), nrow=10)
-#' ccc=coords_pix(area=square(10), nrow=10, ncol=10)
-#' partition=areapart(square(10), G=5, data.coords=ccc)
-#' karlstrom(data.lat, partition$data.assign, category="a",
-#' G.coords=partition$G.coords, neigh.dist=2)
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=FALSE,
-#' add.data=TRUE, data.bin=TRUE, category="a",
-#' data=data.lat, G.coords=partition$G.coords, main="")
+#'
+#' data=matrix((sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
+#' KC.entropy=karlstrom(data, category="a")
+#' KC.entropy=karlstrom(data, category="a", neigh=3.5, method="distance")
+#' ##to plot
+#' data.binary=matrix(as.numeric(data=="a"), nrow(data))
+#' plot(as.im(data.binary, W=KC.entropy$areas.tess$window), main="",
+#'      col=gray(seq(1,0,l=length(unique(c(data.binary))))), ribbon=FALSE)
+#' plot(KC.entropy$areas.tess, add=TRUE, border=2)
 #'
 #' #POINT DATA
-#' data.pp=runifpoint(100, win=square(10))
-#' marks(data.pp)=sample(c("a","b","c"), 100, replace=TRUE)
-#' ccc=coords(data.pp)
-#' partition=areapart(square(10), G=4, data.coords=ccc)
-#' karlstrom(marks(data.pp), partition$data.assign,
-#' category="b", G.coords=partition$G.coords, neigh.dist=4)
-#' plot_areapart(partition$data.assign, square(10), is.pointdata=TRUE,
-#' add.data=TRUE, data.bin=TRUE, category="b",
-#' data=data.pp, G.coords=partition$G.coords, main="")
+#'
+#' #unmarked pp
+#' data=ppp(x=runif(100, 0, 10), y=runif(100, 0, 10), window=square(10))
+#' KC.entropy=karlstrom(data)
+#' ##to plot
+#' plot(data)
+#' plot(KC.entropy$areas.tess, add=TRUE, border=2)
+#'
+#' #marked pp
+#' data=ppp(x=runif(100, 0, 10), y=runif(100, 0, 10), window=square(10),
+#'          marks=(sample(1:5, 100, replace=TRUE)))
+#' #if you want to compute the entropy on all points
+#' KC.entropy=karlstrom(unmark(data))
+#' #if you want to compute the entropy on a category, say 3
+#' KC.entropy=karlstrom(data, category=3)
+#' ##to plot using the selected category
+#' ind=which(marks(data)==3)
+#' data.binary=unmark(data[ind])
+#' plot(data.binary)
+#' plot(KC.entropy$areas.tess, add=TRUE, border=2)
 #'
 #' @export
 
-karlstrom=function(data, data.assign, category, G.coords, neigh.dist){
+karlstrom=function(data, category=1, cell.size=1, partition=10, neigh=4, method="number"){
+
+  if(!is.matrix(data) & !spatstat.geom::is.ppp(data))
+    stop("For grid data, please provide the dataset as a matrix;
+        for point pattern data, please provide the dataset as a ppp object")
 
   #dichotomize dataset according to the category of interest
-  if(is.factor(data)) data=as.character(data)
-  datavec=c(data)
-  datavec[c(data)==category]=1
-  datavec[c(data)!=category]=0
-  datavec=as.numeric(datavec)
+  if(spatstat.geom::is.ppp(data) & !spatstat.geom::is.marked(data) & category!=1)
+    stop("Since data do not have different categories, please set category to the default 1")
+  if(is.matrix(data)) datavec=c(data) else
+    if(spatstat.geom::is.marked(data)) datavec=spatstat.geom::marks(data) else
+      datavec=rep(1, spatstat.geom::npoints(data))
+    if(is.factor(datavec)) datavec=as.character(datavec)
+    if(length(which(unique(datavec)==category))==0)
+      stop("Please choose a category that is present in the dataset.
+           If the point pattern is unmarked, category must be set to 1")
+    datavec=as.numeric(datavec==category)
+    datavec[is.na(datavec)]=0
 
-  #match data values and coordinates
-  data.cat=cbind(data.assign, datavec)
-  ch=sum(datavec) #total number of 1s
+    #create data ppp object
+    if(is.matrix(data))
+    {
+      ncl=ncol(data); nrw=nrow(data)
+      W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
+      xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), l=ncl)
+      yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), l=nrw))
+      coords=expand.grid(yy.c, xx.c)
+      data.pp=spatstat.geom::ppp(x=coords[,2], y=coords[,1], window=W)
+      spatstat.geom::marks(data.pp)=datavec
+    }
+    if (spatstat.geom::is.ppp(data)) {
+      W=data$window
+      data.pp=data
+      spatstat.geom::marks(data.pp)=datavec
+    }
 
-  #Gx2 table matching each area id to the number of 1 values in it
-  if(spatstat::is.ppp(G.coords))
-    G.count=1:(spatstat::npoints(G.coords)) else G.count=1:nrow(G.coords)
-  sums=by(data.cat[,4],data.cat[,3], sum); sums=cbind(as.numeric(names(sums)), as.numeric(sums))
-  col2=numeric(length(G.count))
-  for(i in 1:length(G.count))
-  { ind=which(sums[,1]==i)
-  if(length(ind)>0) col2[i]=sums[which(sums[,1]==i),2]}
-  G.count=cbind(G.count, col2)
+    #prepare the structure of object area partition as a tessellation
+    if(is.numeric(partition) | is.matrix(partition))
+      areap=spatstat.geom::dirichlet(areapart(data, G=partition, cell.size=cell.size)$G.pp) else
+        if(is.list(partition)) {
+          if(names(partition)[1]=="G.pp" & names(partition)[2]=="data.assign")
+            areap=spatstat.geom::dirichlet(partition$G.pp)
+          if(names(partition)[1]=="tiles" & names(partition)[2]=="n")
+            areap=partition
+        } else
+          if(spatstat.geom::is.tess(partition)) {
+            if(partition$window$xrange[1]!=W$xrange[1] | partition$window$xrange[2]!=W$xrange[2] |
+               partition$window$yrange[1]!=W$yrange[1] | partition$window$yrange[2]!=W$yrange[2])
+              stop("The given partition is not on the same observation window as the data")
+            areap=partition
+          } else stop("please provide the area partition object in an accepted format")
 
-  #add relative frequencies
-  G.count=cbind(G.count, G.count[,2]/ch)
+    n.G=areap$n
 
-  #compute p tilde according to neighbourhood
-  distances=spatstat::pairdist(G.coords)
-  G=spatstat::npoints(G.coords)
-  p.tilde=rep(1,G)
-  for (g in 1:G)
-  {
-    which.ind=which(distances[g,]<=neigh.dist)
-    neigh.prob=numeric(length(which.ind))
-    for(j in 1:length(which.ind)) neigh.prob[j]=G.count[which.ind[j], 3]
-    p.tilde[g]=mean(neigh.prob)
-  }
-  G.count=cbind(G.count, p.tilde)
+    #neighbourhood
+    centroids=matrix(unlist(lapply(areap$tiles, spatstat.geom::centroid.owin)), byrow=T, ncol=2)
+    end=spatstat.geom::ppp(centroids[,1], centroids[,2], window=W)
+    maxdist=sqrt(diff(data.pp$window$xrange)^2+diff(data.pp$window$yrange)^2)
+    mindist=min(spatstat.geom::nndist(end))
+    if (method=="number" & neigh%%1!=0) stop("If method=number, neigh must be an integer")
+    if (method=="number" & neigh>n.G) stop("The number of neighbours cannot exceed the number of sub-areas")
+    if (method=="distance" & neigh>=maxdist)
+      warning("The chosen neighbourhood distance is larger than the observation area.
+        All areas will be neighbours of all other areas, i.e. all ptilde will be equal")
+    if (method=="distance" & neigh<mindist)
+      warning("The chosen neighbourhood distance is smaller than the minimum distance between areas.
+        All areas will have 0 neighbours, i.e. all ptildeg will be equal to pg")
 
-  colnames(G.count)=c("area.id", "abs.freq", "rel.freq", "p.tilde")
+    neigh.indlist=vector("list", n.G)
+    for(gg in 1:n.G)
+    {
+      start=spatstat.geom::ppp(centroids[gg,1], centroids[gg,2], window=W)
+      cdist=spatstat.geom::crossdist(start,end)
+      if (method=="number") neigh.indlist[[gg]]=which(cdist<=sort(cdist)[neigh]) else
+        if (method=="distance")  neigh.indlist[[gg]]=which(cdist<=neigh) else
+          stop("Method should be set to either number or distance. If method=number, neigh must be integer.")
+    }
 
-  #karlstrom
-  karlstrom.terms=ifelse(G.count[,3]>0,G.count[,3]*log(1/G.count[,4]),0)
-  karlstrom.ent=sum(karlstrom.terms)
+    tot.pG=sum(datavec)
+    pg=Tg=ptildeg=numeric(n.G)
+    for(gg in 1:n.G)
+    {
+      subd=data.pp[areap$tiles[[gg]]]
+      datatab=table(spatstat.geom::marks(subd))
+      if(length(datatab[which(names(datatab)==1)])==1)
+        pg[gg]=datatab[which(names(datatab)==1)]/tot.pG
+      Tg[gg]=spatstat.geom::area.owin(areap$tiles[[gg]])
+    }
+    for(gg in 1:n.G)
+      ptildeg[gg]=mean(pg[neigh.indlist[[gg]]])
+    G.count=data.frame(1:n.G, pg*tot.pG, pg, ptildeg, Tg)
+    colnames(G.count)=c("area.id", "abs.freq", "rel.freq", "neigh.mean","area.size")
 
-  return(list(karlstrom.table=G.count, karlstrom.ent=karlstrom.ent))
+    #karlstrom
+    karl.terms=ifelse(G.count[,3]>0&G.count[,4]>0,G.count[,3]*log(1/G.count[,4]),0)
+    karl.ent=sum(karl.terms)
+    if(karl.ent>log(n.G)) karl.ent=log(n.G)-1e-05
+
+    return(list(areas.tess=areap, areas.freq=G.count,
+                karlstrom=karl.ent, rel.karl=karl.ent/log(n.G)))
 }
-###########################################

@@ -1,16 +1,17 @@
 Package: SpatEntropy
 Type: Package
 Title: Spatial Entropy Measures
-Version: 0.1.0
+Version: 2.0-1
 Author: L. Altieri, D. Cocchi, G. Roli
-Maintainer: L. Altieri <linda.altieri@unibo.it>
-Depends: R (>= 3.1.0), spatstat
-Description: The heterogeneity of spatial data presenting a finite number of categories can be measured via computation of spatial entropy. Functions are available for the computation of the main entropy and spatial entropy measures in the literature. They include the traditional version of Shannon's entropy, Batty's spatial entropy, O'Neill's entropy, Li and Reynolds' contagion index, Karlstrom and Ceccato's entropy, Leibovici's entropy, Parresol and Edwards' entropy and Altieri's entropy. References for all measures can be found under the topic 'SpatEntropy'. The package is able to work with lattice and point data. 
+Maintainer: Altieri Linda <linda.altieri@unibo.it>
+Depends: R (>= 3.5.0), spatstat (>= 2.0-0)
+Imports: spatstat.geom, spatstat.core, spatstat.linnet
+Description: The heterogeneity of spatial data presenting a finite number of categories can be measured via computation of spatial entropy. Functions are available for the computation of the main entropy and spatial entropy measures in the literature. They include the traditional version of Shannon's entropy (Shannon, 1948 <doi:10.1002/j.1538-7305.1948.tb01338.x>), Batty's spatial entropy (Batty, 1974 <doi:10.1111/j.1538-4632.1974.tb01014.x>), O'Neill's entropy (O'Neill et al., 1998 <doi:10.1007/BF00162741>), Li and Reynolds' contagion index (Li and Reynolds, 1993 <doi:10.1007/BF00125347>), Karlstrom and Ceccato's entropy (Karlstrom and Ceccato, 2002 <urn:nbn:se:kth:diva-61351>), Leibovici's entropy (Leibovici, 2009 <doi:10.1007/978-3-642-03832-7_24>), Parresol and Edwards' entropy (Parresol and Edwards, 2014 <doi:10.3390/e16041842>) and Altieri's entropy (Altieri et al., 2018, <doi:10.1007/s10651-017-0383-1>). Full references for all measures can be found under the topic 'SpatEntropy'. The package is able to work with lattice and point data. The updated version works with the updated 'spatstat' package (>= 2.0-0). It also provides a more intuitive framework for all functions, including improved examples, and new data. The speed of most functions has also been substantially increased.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2018-02-28 09:04:10 UTC; linda.altieri4
+Packaged: 2021-04-06 12:53:21 UTC; linda.altieri4
 Repository: CRAN
-Date/Publication: 2018-02-28 16:51:14 UTC
+Date/Publication: 2021-04-07 09:50:02 UTC

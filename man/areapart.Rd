@@ -4,69 +4,80 @@
 \alias{areapart}
 \title{Area partition.}
 \usage{
-areapart(win, G, data.coords)
+areapart(data, G, cell.size = 1)
 }
 \arguments{
-\item{win}{The observation area, an object of class \code{owin}, see package \code{spatstat}.}
+\item{data}{If data are lattice, a data matrix, which can be numeric, factor, character, ...
+If the dataset is a point pattern, \code{data} is a \code{ppp} object.}
 
 \item{G}{An integer if sub-areas are randomly generated, determining the number \eqn{G} of sub-areas.
-Alternatively, a \eqn{G}x\eqn{2} matrix with the sub-areas centroids' coordinates.}
+Alternatively, a 2-column matrix with the sub-areas centroids' coordinates.}
 
-\item{data.coords}{A two column matrix. If the dataset is a point pattern,
-the point coordinates. If the dataset is a raster/pixel matrix,
-the centroids' coordinates, provided by user or returned by \code{\link[=coords_pix]{coords_pix()}}.}
+\item{cell.size}{A single number. If data are lattice, the length of the side of each pixel.
+Default to 1. Ignored if data are points.}
 }
 \value{
 A list with elements:
 \itemize{
-\item \code{G.coords} a point pattern containing the \eqn{G} areas' centroids
-\item \code{data.assign} a three column matrix, where each pair of data coordinates is
-matched to one of the \eqn{G} areas (numbered 1 to \eqn{G}).
+\item \code{G.pp} a point pattern containing the \eqn{G} areas' centroids
+\item \code{data.assign} a four column matrix, with all pairs of data coordinates and data values
+matched to one of the \eqn{G} areas (numbered 1 to \eqn{G}). If the dataset is an unmarked ppp
+object, the data category column is a vector of 1s.
 }
 }
 \description{
 This function partitions the observation area in a number of sub-areas,
-and assigns the data points/pixels to the areas.
+and assigns the data points/pixels to the areas. This function is useful either
+when a random partition wants to be created, or when the user wants to set the
+area's centroids and is happy with an area tessellation in Voronoi polygons according
+to the defined centroids.
 }
 \details{
+The function is preliminary to the computation of Batty's or Karlstrom and Ceccato's entropy.
 An event of interest (in the form of a point or binary areal dataset) occurs
 over an observation area divided into sub-areas. If the partition is random,
 this function generates the sub-areas by randomly drawing the areas' centroids
 over the observation window. Then, data points/pixels are assigned to the area with
-the closest centroid.
+the closest centroid. When data are pixels, each pixel is assigned to an area according to
+the coordinates of its own centroid.
+The function also works for non-binary datasets and marked ppp objects.
 }
 \examples{
 #LATTICE DATA
-#random generation of areas
-ccc=coords_pix(area=square(10), nrow=10, ncol=10)
-partition=areapart(square(10), G=5, data.coords=ccc)
+
+data=matrix(sort(sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
+partition=areapart(data, G=5)
+partition=areapart(data, G=5, cell.size=2)
+##to plot
+#data
+plot(as.im(data, W=partition$G.pp$window), main="",
+     col=gray(seq(1,0,l=length(unique(c(data)[!is.na(c(data))])))))
+#partition centroids
+plot(partition$G.pp, add=TRUE, pch=16, col=2)
+#partition tessellation
+plot(dirichlet(partition$G.pp), add=TRUE, border=2)
 
 #providing a pre-fixed area partition
-win=square(10)
-G=5
-GG=cbind(runif(G, win$xrange[1], win$xrange[2]),
-         runif(G, win$yrange[1], win$yrange[2]))
-ccc=coords_pix(area=win, pixel.xsize = 2, pixel.ysize = 2)
-partition=areapart(win, G=GG, data.coords=ccc)
+data=matrix(sort(sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
+win=square(nrow(data))
+GG=cbind(runif(5, win$xrange[1], win$xrange[2]),
+         runif(5, win$yrange[1], win$yrange[2]))
+partition=areapart(data, G=GG)
 
 #POINT DATA
-#random generation of areas
-data.pp=runifpoint(100, win=square(10))
-marks(data.pp)=sample(c("a","b","c"), 100, replace=TRUE)
-ccc=coords(data.pp)
-partition=areapart(square(10), G=4, data.coords=ccc)
 
-#providing a pre-fixed area partition
-win=square(10)
-G=4
-GG=cbind(runif(G, win$xrange[1], win$xrange[2]),
-         runif(G, win$yrange[1], win$yrange[2]))
-data.pp=runifpoint(100, win=win)
-marks(data.pp)=sample(c("a","b","c"), 100, replace=TRUE)
-ccc=coords(data.pp)
-partition=areapart(win, G=GG, data.coords=ccc)
+data=ppp(x=runif(100), y=runif(100), window=square(1))
+partition=areapart(data, 10)
+#to plot
+plot(data)
+plot(partition$G.pp, add=TRUE, col=2, pch=16)
+plot(dirichlet(partition$G.pp), add=TRUE, border=2)
 
-#for plotting the area partiton
-?plot_areapart
+#with marks
+data=ppp(x=runif(100), y=runif(100), window=square(1),
+         marks=(sample(c("a","b","c"), 100, replace=TRUE)))
+GG=cbind(runif(10, data$window$xrange[1], data$window$xrange[2]),
+         runif(10, data$window$yrange[1], data$window$yrange[2]))
+partition=areapart(data, G=GG)
 
 }

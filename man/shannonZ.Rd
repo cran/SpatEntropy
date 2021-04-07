@@ -4,16 +4,19 @@
 \alias{shannonZ}
 \title{Shannon's entropy of the transformed variable \eqn{Z}.}
 \usage{
-shannonZ(data, missing.cat = NULL)
+shannonZ(data)
 }
 \arguments{
 \item{data}{A data matrix or vector, can be numeric, factor, character, ...
-If the dataset is a point pattern, \code{data} is the mark vector.}
-
-\item{missing.cat}{Optional, a vector with the names of all categories that are absent in \code{data}.}
+Alternatively, a marked \code{ppp} object.}
 }
 \value{
-Estimated probabilities for all \eqn{Z} categories (data pairs), and Shannon's entropy of \eqn{Z}.
+a list of three elements:
+\itemize{
+\item \code{probabilities} - a table with the estimated probabilities (relative frequencies) for all \eqn{Z} categories (data pairs);
+\item \code{shannZ} - Shannon's entropy of \eqn{Z};
+\item \code{rel.shannZ} - Shannon's relative entropy of \eqn{Z}.
+}
 }
 \description{
 This function computes Shannon's entropy of variable \eqn{Z},
@@ -30,8 +33,10 @@ Shannon's entropy of the variable \eqn{Z} may be computed as
 \deqn{H(Z)=\sum p(z_r)\log(1/p(z_r))}
 where \eqn{p(z_r)} is the probability of the \eqn{r}-th pair of realizations, here
 estimated by its relative frequency.
-Shannon's entropy of \eqn{Z} varies between 0 and \eqn{\log(R)}, \eqn{R} being the
+Shannon's entropy of \eqn{Z} varies between 0 and \eqn{\log(R)}, \eqn{R=binom(n+1,2)} (where \eqn{n} is the number of observations) being the
 number of possible pairs of categories of the variable under study.
+The function is able to work with lattice data with missing data, as long as they are specified as NAs:
+missing data are ignored in the computations.
 }
 \examples{
 #NON SPATIAL DATA
@@ -45,8 +50,5 @@ shannonZ(marks(data.pp))
 #LATTICE DATA
 data.lat=matrix(sample(c("a","b","c"), 100, replace=TRUE), nrow=10)
 shannonZ(data.lat)
-
-#when categories are missing
-shannonZ(data.lat, missing.cat=c("d", "e"))
 
 }
