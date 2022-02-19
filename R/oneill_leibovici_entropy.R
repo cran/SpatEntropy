@@ -43,7 +43,7 @@
 #' oneill(data)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,l=length(unique(c(data))))),
+#'      col=gray(seq(1,0,length.out=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #' #character data, rectangular grid
@@ -136,7 +136,7 @@ oneill=function(data)
 #' leibovici(data, cell.size=1, ccdist=2)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,l=length(unique(c(data))))),
+#'      col=gray(seq(1,0,length.out=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #'#compact grid data - low entropy
@@ -185,8 +185,8 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
   {
     ncl=ncol(data); nrw=nrow(data)
     W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
-    xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), l=ncl)
-    yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), l=nrw))
+    xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), length.out=ncl)
+    yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), length.out=nrw))
     coords=expand.grid(yy.c, xx.c)
     datavec=c(data)
     ind=which(!is.na(datavec))
@@ -320,7 +320,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
 #' contagion(data)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,l=length(unique(c(data))))),
+#'      col=gray(seq(1,0,length.out=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #' #character data, rectangular grid
@@ -370,7 +370,7 @@ contagion=function(data)
 #' parredw(data)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,l=length(unique(c(data))))),
+#'      col=gray(seq(1,0,length.out=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #' #character data, rectangular grid

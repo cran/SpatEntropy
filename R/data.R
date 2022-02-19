@@ -235,6 +235,7 @@
 #' http://www.eea.europa.eu/data-and-maps/ data/corine-land-cover-2000-raster-1
 #'
 #'@examples
+#' data(turinW)
 #' plot(turinW, col=c("red", "white"), main="")
 #' plot(as.im(turin, W=turinW), main="", col=gray(c(0.8,0)), ribbon=FALSE, add=TRUE)
 #'
@@ -264,13 +265,14 @@
 #' http://www.eea.europa.eu/data-and-maps/ data/corine-land-cover-2000-raster-1
 #'
 #'@examples
+#' data(turin); data(turinW); data(turinTess)
 #' plot(turinW, col=c("black", "white"), main="")
 #' plot(turinTess$tiles[[1]],border=2, add=TRUE, lwd=2)
 #' for(ll in 2:turinTess$n) plot(turinTess$tiles[[ll]],border=2, add=TRUE, lwd=2)
 #'
-#' plot(as.im(turin, W=turinW), main="", col=gray(c(0.8,0)), ribbon=FALSE)
-#' plot(turinTess$tiles[[1]],border=2, add=TRUE, lwd=2)
-#' for(ll in 2:turinTess$n) plot(turinTess$tiles[[ll]],border=2, add=TRUE, lwd=2)
+#' plot(as.im(turin, W=turinW), main="", col=gray(c(0.85,0.4)), ribbon=FALSE)
+#' plot(turinTess$tiles[[1]],border=1, add=TRUE, lwd=2)
+#' for(ll in 2:turinTess$n) plot(turinTess$tiles[[ll]],border=1, add=TRUE, lwd=2)
 #'
 #' #see examples under the topic "turin"
 

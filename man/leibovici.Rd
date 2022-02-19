@@ -53,7 +53,7 @@ data=matrix(sample(c("a","b","c"), 400, replace=TRUE), nrow=20)
 leibovici(data, cell.size=1, ccdist=2)
 #plot data
 plot(as.im(data, W=square(nrow(data))),
-     col=gray(seq(1,0,l=length(unique(c(data))))),
+     col=gray(seq(1,0,length.out=length(unique(c(data))))),
      main="", ribbon=TRUE)
 
 #compact grid data - low entropy

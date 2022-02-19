@@ -106,7 +106,7 @@ areapart=function(data, G, cell.size=1){
 
   if(length(G)==1){
     #areas' centroids
-    part.pp=spatstat.core::runifpoint(G, W)
+    part.pp=spatstat.random::runifpoint(G, W)
     part.coord=cbind(x=part.pp$x, y=part.pp$y, id=1:G)
   } else {
     if(min(G[,1])<W$xrange[1]|max(G[,1])>W$xrange[2]|

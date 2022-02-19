@@ -35,7 +35,7 @@ data=matrix(sample(1:5, 100, replace=TRUE), nrow=10)
 parredw(data)
 #plot data
 plot(as.im(data, W=square(nrow(data))),
-     col=gray(seq(1,0,l=length(unique(c(data))))),
+     col=gray(seq(1,0,length.out=length(unique(c(data))))),
      main="", ribbon=TRUE)
 
 #character data, rectangular grid

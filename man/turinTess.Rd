@@ -30,13 +30,14 @@ The list also contains the names of the municipalities, in Italian.
 Examples on the usefulness of the administrative borders can be found at the topi \link{turin}.
 }
 \examples{
+data(turin); data(turinW); data(turinTess)
 plot(turinW, col=c("black", "white"), main="")
 plot(turinTess$tiles[[1]],border=2, add=TRUE, lwd=2)
 for(ll in 2:turinTess$n) plot(turinTess$tiles[[ll]],border=2, add=TRUE, lwd=2)
 
-plot(as.im(turin, W=turinW), main="", col=gray(c(0.8,0)), ribbon=FALSE)
-plot(turinTess$tiles[[1]],border=2, add=TRUE, lwd=2)
-for(ll in 2:turinTess$n) plot(turinTess$tiles[[ll]],border=2, add=TRUE, lwd=2)
+plot(as.im(turin, W=turinW), main="", col=gray(c(0.85,0.4)), ribbon=FALSE)
+plot(turinTess$tiles[[1]],border=1, add=TRUE, lwd=2)
+for(ll in 2:turinTess$n) plot(turinTess$tiles[[ll]],border=1, add=TRUE, lwd=2)
 
 #see examples under the topic "turin"
 }

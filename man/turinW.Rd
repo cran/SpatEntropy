@@ -22,6 +22,7 @@ This observation window is an \code{owin} object created as a binary mask. See \
 Examples on the usefulness of the window can be found at the topi \link{turin}.
 }
 \examples{
+data(turinW)
 plot(turinW, col=c("red", "white"), main="")
 plot(as.im(turin, W=turinW), main="", col=gray(c(0.8,0)), ribbon=FALSE, add=TRUE)
 

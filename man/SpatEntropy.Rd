@@ -12,10 +12,14 @@ literature. They include the traditional version of Shannon's entropy,
 Batty's spatial entropy, O'Neill's entropy, Li and Reynolds' contagion index,
 Karlstrom and Ceccato's entropy, Leibovici's entropy, Parresol and Edwards'
 entropy and Altieri's entropy.
-The package is able to work with lattice and point data.
+The package is able to work with lattice and point data. A step-by-step guide
+for new users can be found in the first referenced article.
 }
 \details{
 References:
+
+ALTIERI L., COCCHI D., ROLI G. (2021). Spatial entropy for biodiversity and environmental data: The
+R-package SpatEntropy. Environmental Modelling and Software
 
 ALTIERI L., COCCHI D., ROLI G. (2019). Advances in spatial entropy measures.
 Stochastic Environmental Research and Risk Assessment
