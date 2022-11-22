@@ -1,11 +1,11 @@
-bce0f7fa3bcd9c990b879fb7f2dd6714 *DESCRIPTION
+6226f35c784ce275eb6325a647605780 *DESCRIPTION
 cf60b10db6e486a43144bc667a3036ab *NAMESPACE
 543f3b1699063c06a062e2212935f9bb *R/SpatEntropy.R
-aedb7a28d5a181071ff8903a8b68ab74 *R/altieri_entropy.R
+64f7ae8c8c248cd571104f6c8b056078 *R/altieri_entropy.R
 df924e045590c5d7fd908e2b49d2d2de *R/batty_karlstrom_entropy.R
 545f8d12998a7e7d183e68979b99f3c5 *R/data.R
-35613c9838e01a466e93de3440e48538 *R/oneill_leibovici_entropy.R
-39d022e1ab14e5a9c4cd7596ff1d6479 *R/shannon.R
+f081db03f8aaf06c3e4506cd0a5f733e *R/oneill_leibovici_entropy.R
+c6b7c910c0a6ccaf4cc1df582435efaa *R/shannon.R
 1685a45dd06a61c349cf949055a941f8 *data/raintrees.RData
 07a2e99819f2ad0d22eacc8124f38b84 *data/raintreesCOV.RData
 24b22b2d26e52bece9183a861196282a *data/turin.RData

@@ -222,7 +222,7 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
         ind=which(pdis>dbreak[dd] & pdis<=dbreak[dd+1])
         if(length(ind)>0)
           datapairs.list[[ii%/%speedstep+1]][[dd]]=c(datapairs.list[[ii%/%speedstep+1]][[dd]],
-                            paste0(spatstat.geom::marks(start),spatstat.geom::marks(end[ind])))
+                            paste0(spatstat.geom::marks(start),"-", spatstat.geom::marks(end[ind])))
       }
       if(verbose) {if(ii%%100==0) print(paste0("Done for ", ii, "/", spatstat.geom::npoints(data), " observations"))}
     }
@@ -254,11 +254,11 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
     warning(paste0("Class ", inddrop, " dropped because it does not contain pairs. "))
   }
   catnames=c()
-  for(ii in 1:length(Xcat)) catnames=c(catnames,paste0(Xcat[ii], Xcat[ii]))
-  if(length(Xcat)>1) for(ii in 1:(length(Xcat)-1)) catnames=c(catnames,paste0(Xcat[ii], Xcat[(ii+1): length(Xcat)]))
+  for(ii in 1:length(Xcat)) catnames=c(catnames,paste0(Xcat[ii], "-", Xcat[ii]))
+  if(length(Xcat)>1) for(ii in 1:(length(Xcat)-1)) catnames=c(catnames,paste0(Xcat[ii], "-", Xcat[(ii+1): length(Xcat)]))
   catnames.proxy=c()
-  for(ii in 1:length(Xcat)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], Xcat.proxy[ii]))
-  if(length(Xcat)>1) for(ii in 1:(length(Xcat)-1)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], Xcat.proxy[(ii+1): length(Xcat)]))
+  for(ii in 1:length(Xcat)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], "-", Xcat.proxy[ii]))
+  if(length(Xcat)>1) for(ii in 1:(length(Xcat)-1)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], "-", Xcat.proxy[(ii+1): length(Xcat)]))
 
   probabilities=vector("list", length(dbreak)-1)
   names(probabilities)=paste0("conditional distribution for distance class ", 1:(length(dbreak)-1),
@@ -276,7 +276,7 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
   {
     if(length(tabpairs[[dd]])==1) probabilities[[dd]]$abs.freq=tabpairs[[dd]] else
     {
-    lll=lapply(strsplit(names(tabpairs[[dd]]),split=""),rev)
+    lll=lapply(strsplit(names(tabpairs[[dd]]),split="-"),rev)
     for(ii in 1:length(lll))
       names(inv.tabpairs[[dd]])[ii]=paste0(lll[[ii]][1], lll[[ii]][2])
 

@@ -72,12 +72,12 @@ oneill=function(data)
   for(i in 1:(nrow(data)-1))
   {
     ind=which(!is.na(data[i,]) & !is.na(data[i+1,]))
-    datapairs=c(datapairs, paste0(data[i,ind],data[i+1,ind]))
+    datapairs=c(datapairs, paste0(data[i,ind],"-",data[i+1,ind]))
   }
   for(j in 1:(ncol(data)-1))
   {
     ind=which(!is.na(data[,j]) & !is.na(data[,j+1]))
-    datapairs=c(datapairs, paste0(data[ind,j], data[ind,j+1]))
+    datapairs=c(datapairs, paste0(data[ind,j], "-",data[ind,j+1]))
   }
   tabpairs=table(datapairs)
 
@@ -215,7 +215,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
       ind=which(pdis<=ccdist)
       if(length(ind)>0)
         datapairs.list[[ii%/%speedstep+1]]=c(datapairs.list[[ii%/%speedstep+1]],
-                                             paste0(spatstat.geom::marks(start),spatstat.geom::marks(end[ind])))
+                                             paste0(spatstat.geom::marks(start),"-",spatstat.geom::marks(end[ind])))
       if(verbose) {if(ii%%100==0) print(paste0("Done for ", ii, "/", spatstat.geom::npoints(centr.pp), " (non-NA) observations"))}
     }
     for(nn in 1:length(datapairs.list))
@@ -254,7 +254,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
       ind=which(pdis<=ccdist)
       if(length(ind)>0)
         datapairs.list[[ii%/%speedstep+1]]=c(datapairs.list[[ii%/%speedstep+1]],
-                                             paste0(spatstat.geom::marks(start),spatstat.geom::marks(end[ind])))
+                                             paste0(spatstat.geom::marks(start),"-",spatstat.geom::marks(end[ind])))
 
       if(verbose) {if(ii%%100==0) print(paste0("Done for ", ii, "/", spatstat.geom::npoints(data), " observations"))}
     }
@@ -271,9 +271,9 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
 
   tabpairs=table(datapairs)
   catnames=c()
-  for(ii in 1:length(Xcat)) catnames=c(catnames,paste0(Xcat[ii], Xcat))
+  for(ii in 1:length(Xcat)) catnames=c(catnames,paste0(Xcat[ii],"-", Xcat))
   catnames.proxy=c()
-  for(ii in 1:length(Xcat)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], Xcat.proxy))
+  for(ii in 1:length(Xcat)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], "-",Xcat.proxy))
 
   for(ii in 1:length(tabpairs)) names(tabpairs)[ii]=catnames[which(catnames.proxy==names(tabpairs)[ii])]
   probabilities=data.frame("couple"=names(tabpairs),

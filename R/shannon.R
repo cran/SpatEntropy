@@ -200,11 +200,11 @@ shannonZ=function(data)
   Xcat.proxy=1:length(Xcat)
   data.tab.proxy=data.tab; names(data.tab.proxy)=Xcat.proxy
   catnames=c()
-  for(ii in 1:length(Xcat)) catnames=c(catnames,paste0(Xcat[ii], Xcat[ii]))
-  if(length(Xcat)>1) for(ii in 1:(length(Xcat)-1)) catnames=c(catnames,paste0(Xcat[ii], Xcat[(ii+1): length(Xcat)]))
+  for(ii in 1:length(Xcat)) catnames=c(catnames,paste0(Xcat[ii], "-", Xcat[ii]))
+  if(length(Xcat)>1) for(ii in 1:(length(Xcat)-1)) catnames=c(catnames,paste0(Xcat[ii], "-",Xcat[(ii+1): length(Xcat)]))
   catnames.proxy=c()
-  for(ii in 1:length(Xcat)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], Xcat.proxy[ii]))
-  if(length(Xcat)>1)for(ii in 1:(length(Xcat)-1)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], Xcat.proxy[(ii+1): length(Xcat)]))
+  for(ii in 1:length(Xcat)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], "-",Xcat.proxy[ii]))
+  if(length(Xcat)>1)for(ii in 1:(length(Xcat)-1)) catnames.proxy=c(catnames.proxy,paste0(Xcat.proxy[ii], "-",Xcat.proxy[(ii+1): length(Xcat)]))
 
   probabilities=data.frame("pair"=catnames,
                            "abs.freq"=numeric(length(catnames)),
@@ -219,7 +219,7 @@ shannonZ=function(data)
 
     for (ii in (length(Xcat)+1):length(catnames))
     {
-      pair.el=unlist(strsplit(catnames.proxy[ii], split=""))
+      pair.el=unlist(strsplit(catnames.proxy[ii], split="-"))
       probabilities$abs.freq[ii]=as.numeric(choose(
         data.tab[names(data.tab.proxy)==pair.el[1]]+
         data.tab[names(data.tab.proxy)==pair.el[2]],
@@ -229,7 +229,8 @@ shannonZ=function(data)
     }
 
     probabilities$rel.freq=probabilities$abs.freq/sum(probabilities$abs.freq)
-    shZ=-sum(probabilities$rel.freq*log(probabilities$rel.freq))
+    shZ=-sum(probabilities$rel.freq[probabilities$rel.freq!=0]*
+               log(probabilities$rel.freq[probabilities$rel.freq!=0]))
     return(list(probabilities=probabilities, shannZ=shZ,
                 rel.shannZ=ifelse(nrow(probabilities)>1,shZ/log(nrow(probabilities)),0)))
 }
@@ -288,8 +289,8 @@ varshannonZ=function(data)
   data.tab=table(datavec)
   Xcat=names(data.tab)
   catnames=c()
-  for(ii in 1:length(Xcat)) catnames=c(catnames,paste0(Xcat[ii], Xcat[ii]))
-  for(ii in 1:(length(Xcat)-1)) catnames=c(catnames,paste0(Xcat[ii], Xcat[(ii+1): length(Xcat)]))
+  for(ii in 1:length(Xcat)) catnames=c(catnames,paste0(Xcat[ii], "-", Xcat[ii]))
+  for(ii in 1:(length(Xcat)-1)) catnames=c(catnames,paste0(Xcat[ii], "-", Xcat[(ii+1): length(Xcat)]))
 
   probabilities=data.frame("pair"=catnames,
                            "abs.freq"=numeric(length(catnames)),
@@ -304,7 +305,7 @@ varshannonZ=function(data)
 
     for (ii in (length(Xcat)+1):length(catnames))
     {
-      pair.el=unlist(strsplit(catnames[ii], split=""))
+      pair.el=unlist(strsplit(catnames[ii], split="-"))
       probabilities$abs.freq[ii]=as.numeric(choose(data.tab[names(data.tab)==pair.el[1]]+data.tab[names(data.tab)==pair.el[2]],2))-
         (choose(data.tab[names(data.tab)==pair.el[1]],2)+choose(data.tab[names(data.tab)==pair.el[2]],2))
     }
