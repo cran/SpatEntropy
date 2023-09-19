@@ -31,6 +31,12 @@
 #'   Default to 1. Ignored if data are points.
 #' @param G An integer if sub-areas are randomly generated, determining the number \eqn{G} of sub-areas.
 #'          Alternatively, a 2-column matrix with the sub-areas centroids' coordinates.
+#' @param win Optional, the observation area given as a \code{owin} object. If
+#'            data are a point pattern \code{ppp} object, this argument is ignored
+#'            and the observation area is extracted from the object. If data are
+#'            given as a matrix and the area is not specified, the default is a
+#'            rectangle with x range from 0 to the number of columns of the data, and
+#'            y range from 0 to the number of rows of the data.
 #'
 #' @return A list with elements:
 #'\itemize{
@@ -39,6 +45,7 @@
 #'   matched to one of the \eqn{G} areas (numbered 1 to \eqn{G}). If the dataset is an unmarked ppp
 #'   object, the data category column is a vector of 1s.
 #'   }
+#'   Moreover, a plot is produced showing the data and the area partition.
 #'
 #' @examples
 #' #LATTICE DATA
@@ -46,14 +53,6 @@
 #' data=matrix(sort(sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
 #' partition=areapart(data, G=5)
 #' partition=areapart(data, G=5, cell.size=2)
-#' ##to plot
-#' #data
-#' plot(as.im(data, W=partition$G.pp$window), main="",
-#'      col=gray(seq(1,0,l=length(unique(c(data)[!is.na(c(data))])))))
-#' #partition centroids
-#' plot(partition$G.pp, add=TRUE, pch=16, col=2)
-#' #partition tessellation
-#' plot(dirichlet(partition$G.pp), add=TRUE, border=2)
 #'
 #' #providing a pre-fixed area partition
 #' data=matrix(sort(sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
@@ -66,10 +65,6 @@
 #'
 #' data=ppp(x=runif(100), y=runif(100), window=square(1))
 #' partition=areapart(data, 10)
-#' #to plot
-#' plot(data)
-#' plot(partition$G.pp, add=TRUE, col=2, pch=16)
-#' plot(dirichlet(partition$G.pp), add=TRUE, border=2)
 #'
 #' #with marks
 #' data=ppp(x=runif(100), y=runif(100), window=square(1),
@@ -80,7 +75,7 @@
 #'
 #' @export
 
-areapart=function(data, G, cell.size=1){
+areapart=function(data, G, cell.size=1, win=NULL){
 
   if(!is.matrix(data) & !spatstat.geom::is.ppp(data))
     stop("For grid data, please provide the dataset as a matrix;
@@ -89,20 +84,33 @@ areapart=function(data, G, cell.size=1){
   if(is.matrix(data))
   {
     ncl=ncol(data); nrw=nrow(data)
-    W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
-    xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), l=ncl)
-    yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), l=nrw))
-    coords=expand.grid(yy.c, xx.c)
-    data.pp=spatstat.geom::ppp(x=coords[,2], y=coords[,1], window=W)
-    spatstat.geom::marks(data.pp)=c(data)
+
+    if(length(cell.size)==1) {
+      xsize=cell.size
+      ysize=cell.size} else {
+        xsize=cell.size[1]
+        ysize=cell.size[2]}
+
+    if(is.null(win))
+      W=spatstat.geom::owin(xrange=c(0, ncl*xsize), yrange=c(0,nrw*ysize)) else
+        W=win
+      xx.c=seq(W$xrange[1]+xsize/2, W$xrange[1]+(ncl*xsize-xsize/2), length.out=ncl)
+      yy.c=(seq(W$yrange[1]+ysize/2, W$yrange[1]+(nrw*ysize-ysize/2), length.out=nrw))
+      cooords=expand.grid(yy.c, xx.c)
+      suppressWarnings({data.pp=spatstat.geom::ppp(x=cooords[,2], y=cooords[,1], window=W)})
+      spatstat.geom::marks(data.pp)=c(data)#[!is.na(c(data))]
+    spatstat.geom::plot.im(spatstat.geom::as.im(data, W=W), main="",
+         col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
+         ribbon=F)
+
   }
 
   if (spatstat.geom::is.ppp(data)) {
     W=data$window
     data.pp=data
     if(is.null(spatstat.geom::marks(data))) spatstat.geom::marks(data.pp)=rep(1, spatstat.geom::npoints(data))
+    spatstat.geom::plot.ppp(data, pch=16, cex=.5, main="", legend=F)
   }
-
 
   if(length(G)==1){
     #areas' centroids
@@ -120,6 +128,8 @@ areapart=function(data, G, cell.size=1){
   near.neigh=spatstat.geom::nncross(data.pp, part.pp)
   data.coord.area=data.frame(data.pp$x, data.pp$y, data.pp$marks, near.neigh$which)
   colnames(data.coord.area)=c("x", "y", "cat", "area")
+
+  spatstat.geom::plot.tess(spatstat.geom::dirichlet(part.pp), add=TRUE, border=2)
 
   return(list(G.pp=part.pp, data.assign=data.coord.area))
 }
@@ -154,43 +164,47 @@ areapart=function(data, G, cell.size=1){
 #'   If the dataset is a point pattern, `data` is a \code{ppp} object.
 #' @param category A single value matching the data category of interest for computing Batty's entropy.
 #'  Default to 1. If the dataset is an unmarked point pattern, this argument must not be changed from the default.
-#' @param cell.size A single number. If data are lattice, the length of the side of each pixel.
-#'   Default to 1. Ignored if data are points.
+#'  In the plot, only data belonging to the selected category are displayed.
+#' @param cell.size A single number or a vector of length two, only needed if data are lattice. It gives the length of the side of each pixel;
+#' if the pixel is rectangular, the first number gives the horizontal side and the second number gives the vertical side. Default to 1. Ignored if data are points.
 #' @param partition Input defining the partition into subareas. If an integer, it defines the
 #' number of sub-areas that are randomly generated by [areapart]; if a two column matrix
 #' with coordinates, they are the centroids of the subareas built by [areapart]. Alternatively,
-#' it can be the output of [areapart], or a \code{tess} object built by the user.
+#' it can be the output of [areapart], a \code{tess} object built by the user, a \code{list} object
+#' with arguments \code{tiles}, i.e. a list of \code{owin} objects defining the partition, and \code{n}, the number of subareas.
+#' Lastly, it can be an \code{im} object, i.e. a factor- or character-valued pixel image on the
+#' same observation window as the data, so that the partition is defined according to the values
+#' of the image.
 #' The default option is \code{partition=areapart(data, G=10)}, which generates 10 random sub-areas.
+#' @param win Optional, the observation area given as a \code{owin} object. If
+#'            data are a point pattern \code{ppp} object, this argument is ignored
+#'            and the observation area is extracted from the object. If data are
+#'            given as a matrix, the area should be specified; the default is a
+#'            rectangle with x range from 0 to the number of columns of the data, and
+#'            y range from 0 to the number of rows of the data.
 #'
-#' @return A list of four elements:
+#' @return A list of five elements:
 #'\itemize{
-#'   \item `area.tess` a \code{tess} object with the area partition
-#'   \item `areas.freq` a dataframe giving, for each sub-area, the absolute and relative frequency of
-#'   the points/pixels of interest and the sub-area size
-#'     for each sub-area
 #'   \item `batty` Batty's entropy
+#'   \item `range` The theoretical range of Batty's entropy
 #'   \item `rel.batty` Batty's entropy divided by \eqn{\log(\sum Tg)} for comparison across observation areas.
+#'   \item `areas` a dataframe giving, for each sub-area of the partition, the absolute and relative frequency of
+#'   the points/pixels of interest, the sub-area size and the intensity defined as \eqn{pg/Tg}
+#'   \item `area.tess` a \code{tess} object with the area partition
 #'}
+#'Moreover, a plot is produced showing the data and the area partition.
 #'
 #' @examples
 #' #LATTICE DATA
 #'
 #' data=matrix((sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
 #' batty.entropy=batty(data, category="a")
-#' ##to plot
-#' data.binary=matrix(as.numeric(data=="a"), nrow(data))
-#' plot(as.im(data.binary, W=batty.entropy$areas.tess$window), main="",
-#'      col=gray(seq(1,0,l=length(unique(c(data.binary))))), ribbon=FALSE)
-#' plot(batty.entropy$areas.tess, add=TRUE, border=2)
 #'
 #' #POINT DATA
 #'
 #' #unmarked pp
 #' data=ppp(x=runif(100, 0, 10), y=runif(100, 0, 10), window=square(10))
 #' batty.entropy=batty(data)
-#' ##to plot
-#' plot(data)
-#' plot(batty.entropy$areas.tess, add=TRUE, border=2)
 #'
 #' #marked pp
 #' data=ppp(x=runif(100, 0, 10), y=runif(100, 0, 10), window=square(10),
@@ -200,15 +214,10 @@ areapart=function(data, G, cell.size=1){
 #' batty.entropy=batty(unmark(data))
 #' #if you want to compute the entropy on a category, say 3
 #' batty.entropy=batty(data, category=3)
-#' ##to plot using the selected category
-#' ind=which(marks(data)==3)
-#' data.binary=unmark(data[ind])
-#' plot(data.binary)
-#' plot(batty.entropy$areas.tess, add=TRUE, border=2)
 #'
 #' @export
 
-batty=function(data, category=1, cell.size=1, partition=10){
+batty=function(data, category=1, cell.size=1, partition=10, win=NULL){
 
   if(!is.matrix(data) & !spatstat.geom::is.ppp(data))
     stop("For grid data, please provide the dataset as a matrix;
@@ -222,77 +231,142 @@ batty=function(data, category=1, cell.size=1, partition=10){
       datavec=rep(1, spatstat.geom::npoints(data))
     if(is.factor(datavec)) datavec=as.character(datavec)
     if(length(which(unique(datavec)==category))==0)
-      stop("Please choose a category that is present in the dataset.
-           If the point pattern is unmarked, category must be set to 1")
+      stop("In the function arguments, please select a category among the ones of the dataset.
+      If the data is a marked point pattern and you wish to compute entropy over all points,
+      please use unmark(data) as first argument.
+           If the point pattern is unmarked, the argument category must be set to 1")
     datavec=as.numeric(datavec==category)
-    datavec[is.na(datavec)]=0
+    #datavec[is.na(datavec)]=0
 
     #create data ppp object
     if(is.matrix(data))
     {
       ncl=ncol(data); nrw=nrow(data)
-      W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
-      xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), l=ncl)
-      yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), l=nrw))
-      coords=expand.grid(yy.c, xx.c)
-      data.pp=spatstat.geom::ppp(x=coords[,2], y=coords[,1], window=W)
-      spatstat.geom::marks(data.pp)=datavec
+
+      if(length(cell.size)==1) {
+        xsize=cell.size
+        ysize=cell.size} else {
+          xsize=cell.size[1]
+          ysize=cell.size[2]}
+
+      if(is.null(win))
+        W=spatstat.geom::owin(xrange=c(0, ncl*xsize), yrange=c(0,nrw*ysize)) else
+        W=win
+      xx.c=seq(W$xrange[1]+xsize/2, W$xrange[1]+(ncl*xsize-xsize/2), length.out=ncl)
+      yy.c=(seq(W$yrange[1]+ysize/2, W$yrange[1]+(nrw*ysize-ysize/2), length.out=nrw))
+      cooords=expand.grid(yy.c, xx.c)
+      suppressWarnings({data.pp=spatstat.geom::ppp(x=cooords[,2], y=cooords[,1], window=W)})
+      spatstat.geom::marks(data.pp)=datavec#[!is.na(datavec)]
+      spatstat.geom::plot.im(spatstat.geom::as.im(matrix(datavec, nrow(data)), W=W), main="",
+                             col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
+                             ribbon=F)
     }
+
     if (spatstat.geom::is.ppp(data)) {
       W=data$window
       data.pp=data
-      spatstat.geom::marks(data.pp)=datavec
+      spatstat.geom::marks(data.pp)=datavec[!is.na(datavec)]
+      dataplot=spatstat.geom::unmark(data.pp[spatstat.geom::marks(data.pp)==1])
+      spatstat.geom::plot.ppp(dataplot, pch=16, cex=.5, main="")
+
     }
 
     #prepare the structure of object area partition as a tessellation
     if(is.numeric(partition) | is.matrix(partition))
-      areap=spatstat.geom::dirichlet(areapart(data, G=partition, cell.size=cell.size)$G.pp) else
-        if(is.list(partition)) {
+    {
+      if(is.matrix(data))
+        areap=spatstat.geom::dirichlet(areapart(matrix(datavec,nrow(data)), G=partition,
+                                       cell.size=cell.size, win=W)$G.pp)
+      if(spatstat.geom::is.ppp(data))
+        areap=spatstat.geom::dirichlet(areapart(dataplot, G=partition,
+                                                cell.size=cell.size, win=W)$G.pp)
+    } else
+
+    if(is.list(partition) & ! spatstat.geom::is.im(partition)) {
           if(names(partition)[1]=="G.pp" & names(partition)[2]=="data.assign")
-            areap=spatstat.geom::dirichlet(partition$G.pp)
+           { areap=spatstat.geom::dirichlet(partition$G.pp)
+           spatstat.geom::plot.tess(areap, add=T, border=2)}
           if(names(partition)[1]=="tiles" & names(partition)[2]=="n")
-            areap=partition
+            {areap=partition
+             spatstat.geom::plot.owin(areap$tiles[[1]],border=2, add=T)
+             for(ll in 2:areap$n) spatstat.geom::plot.owin(areap$tiles[[ll]],border=2, add=T)}
         } else
-          if(spatstat.geom::is.tess(partition)) {
+
+    if(spatstat.geom::is.tess(partition)) {
             if(partition$window$xrange[1]!=W$xrange[1] | partition$window$xrange[2]!=W$xrange[2] |
                partition$window$yrange[1]!=W$yrange[1] | partition$window$yrange[2]!=W$yrange[2])
               stop("The given partition is not on the same observation window as the data")
             if(is.null(partition$tiles)) stop("If a tessellation is provided, it should contain tiles")
             areap=partition
-          } else stop("please provide the area partition object in an accepted format.
+            spatstat.geom::plot.tess(partition, add=T, border=2)
+          } else
+
+    if(spatstat.geom::is.im(partition))
+          {
+            partnames=names(table(partition$v, useNA="no"))
+            vvv=length(partnames)
+            if(vvv==length(datavec[!is.na(datavec)]))
+              stop("You should provide an image with a limited number of categories for data partition")
+            maskv = tiles = vector("list", length=vvv)
+            for(ii in 1:vvv)
+            {
+              maskv[[ii]] = as.logical(c(partition$v)==partnames[ii])
+              tiles[[ii]] = spatstat.geom::owin(xrange = W$xrange,
+                                 yrange = W$yrange,
+                                 mask = matrix(maskv[[ii]],
+                                               nrow=partition$dim[1]))
+            }
+            areap = list(tiles = tiles, n = vvv, names = partnames)
+            spatstat.geom::plot.im(partition, main = "",
+                                   col = grDevices::gray(seq(0.9, 0.2, l = vvv)))
+            if(spatstat.geom::is.ppp(data)) spatstat.geom::plot.ppp(dataplot, add=T, pch=16, cex=.5)
+            if(is.matrix(data)) spatstat.geom::plot.ppp(data.pp[spatstat.geom::marks(data.pp)==1], add=T, pch=15, cex=.2)
+       } else stop("Please provide the area partition object in an accepted format, see ?batty.
                       If a tessellation is provided, it should contain tiles")
 
-
-
     n.G=areap$n
-    tot.pG=sum(datavec)
-    pg=Tg=numeric(n.G)
+    tot.pG=sum(datavec, na.rm=T)
+    absg=pg=Tg=lambdag=numeric(n.G)
     for(gg in 1:n.G)
     {
       subd=data.pp[areap$tiles[[gg]]]
       datatab=table(spatstat.geom::marks(subd))
       if(length(datatab[which(names(datatab)==1)])==1)
-        pg[gg]=datatab[which(names(datatab)==1)]/tot.pG
+        {absg[gg]=datatab[which(names(datatab)==1)]
+        pg[gg]=absg[gg]/tot.pG}
       Tg[gg]=spatstat.geom::area.owin(areap$tiles[[gg]])
       if(is.na(Tg[gg]))
         Tg[gg]=table(areap$tiles[[gg]]$m)[which(names(table(areap$tiles[[gg]]$m))==T)]*
         spatstat.geom::area.owin(data.pp$window)/(nrow(areap$tiles[[gg]]$m)*ncol(areap$tiles[[gg]]$m))
+      lambdag[gg]=pg[gg]/Tg[gg]
     }
-    G.count=data.frame(1:n.G, pg*tot.pG, pg, Tg)
-    colnames(G.count)=c("area.id", "abs.freq", "rel.freq", "area.size")
+    G.count=data.frame(1:n.G, absg, pg, Tg, lambdag)
+    colnames(G.count)=c("area.id", "abs.freq", "rel.freq", "area.size", "area.intens")
 
     if(sum(Tg)==1)
     {
       Tg=Tg*100
-      warning("The total observation area is 1, which returns problems in the computation of Batty's entropy, since the maximum is log(1)=0.
+      warning("The total observation area is of size 1, which returns problems in the computation of Batty's relative entropy, since the maximum becomes log(1)=0.
       For this reason, during the computation all areas are multiplied by 100." )
     }
 
     #batty
-    batty.terms=ifelse(G.count[,2]>0,G.count[,3]*log(Tg/G.count[,3]),0)
+    batty.terms=ifelse(G.count[,3]>0,G.count[,3]*log(Tg/G.count[,3]),0)
     batty.ent=sum(batty.terms)
+    batty.range=c(log(min(Tg)), log(sum(Tg)))
+    names(batty.range)=c("Min", "Max")
+    if(batty.ent>=0 & min(Tg)<1) warning("The minimum of Batty's entropy is negative because some sub-areas have a size < 1.
+                          You may rescale your observation area so that all sub-areas are larger than 1,
+                          or you may use Batty's LISA entropy with no neighbourhood, see ?karlstrom.")
+    if(batty.ent<0) warning("Batty's entropy is negative because some sub-areas have a size < 1.
+                          You may rescale your observation area so that all sub-areas are larger than 1,
+                          or you may use Batty's LISA entropy with no neighbourhood, see ?karlstrom.")
 
-    return(list(areas.tess=areap, areas.freq=G.count, batty=batty.ent, rel.batty=batty.ent/log(sum(Tg))))
+    return(list(batty=batty.ent,
+                range=batty.range,
+                rel.batty=batty.ent/log(sum(Tg)),
+                areas=G.count,
+                area.tess=areap))
 }
 
 
@@ -327,28 +401,39 @@ batty=function(data, category=1, cell.size=1, partition=10){
 #'   If the dataset is a point pattern, `data` is a \code{ppp} object.
 #' @param category A single value matching the data category of interest for computing Batty's entropy.
 #'  Default to 1. If the dataset is an unmarked point pattern, this argument must not be changed from the default.
-#' @param cell.size A single number. If data are lattice, the length of the side of each pixel.
-#'   Default to 1. Ignored if data are points.
+#' @param cell.size A single number or a vector of length two, only needed if data are lattice. It gives the length of the side of each pixel;
+#' if the pixel is rectangular, the first number gives the horizontal side and the second number gives the vertical side. Default to 1. Ignored if data are points.
 #' @param partition Input defining the partition into subareas. If an integer, it defines the
 #' number of sub-areas that are randomly generated by [areapart]; if a two column matrix
 #' with coordinates, they are the centroids of the subareas built by [areapart]. Alternatively,
-#' it can be the output of [areapart], or a \code{tess} object built by the user.
+#' it can be the output of [areapart], a \code{tess} object built by the user, a \code{list} object
+#' with arguments \code{tiles}, i.e. a list of \code{owin} objects defining the partition, and \code{n}, the number of subareas.
+#' Lastly, it can be an \code{im} object, i.e. a factor- or character-valued pixel image on the
+#' same observation window as the data, so that the partition is defined according to the values
+#' of the image.
 #' The default option is \code{partition=areapart(data, G=10)}, which generates 10 random sub-areas.
+#' @param win Optional, the observation area given as a \code{owin} object. If
+#'            data are a point pattern \code{ppp} object, this argument is ignored
+#'            and the observation area is extracted from the object. If data are
+#'            given as a matrix and the area is not specified, the default is a
+#'            rectangle with x range from 0 to the number of columns of the data, and
+#'            y range from 0 to the number of rows of the data.
 #' @param neigh A single number. It can be either the number of neighbours for each sub-area
 #' (including the area itself). or the Euclidean distance to define which sub-areas are neighbours,
 #' based on their centroids. Default to 4 neighbours.
 #' @param method Character, it guides the interpretation of \code{neigh}. Either "number" (the default)
 #' or "distance".
 #'
-#' @return A list of four elements:
+#' @return A list of five elements:
 #'\itemize{
-#'   \item `area.tess` a \code{tess} object with the area partition
-#'   \item `areas.freq` a dataframe giving, for each sub-area, the absolute and relative frequency of
-#'   the points/pixels of interest, the weighted probabilities of the neighbours and the sub-area size
-#'     for each sub-area
 #'   \item `karlstrom` Karlstrom and Ceccato's entropy
+#'   \item `range` The theoretical range of Karlstrom and Ceccato's entropy
 #'   \item `rel.karl` Karlstrom and Ceccato's entropy divided by \eqn{\log(G)} (number og sub-areas) for comparison across observation areas.
+#'   \item `areas` a dataframe giving, for each sub-area, the absolute and relative frequency of
+#'   the points/pixels of interest, the weighted probabilities of the neighbours and the sub-area size
+#'   \item `area.tess` a \code{tess} object with the area partition
 #'}
+#'Moreover, a plot is produced showing the data and the area partition.
 #'
 #' @examples
 #' #LATTICE DATA
@@ -358,9 +443,9 @@ batty=function(data, category=1, cell.size=1, partition=10){
 #' KC.entropy=karlstrom(data, category="a", neigh=3.5, method="distance")
 #' ##to plot
 #' data.binary=matrix(as.numeric(data=="a"), nrow(data))
-#' plot(as.im(data.binary, W=KC.entropy$areas.tess$window), main="",
-#'      col=gray(seq(1,0,l=length(unique(c(data.binary))))), ribbon=FALSE)
-#' plot(KC.entropy$areas.tess, add=TRUE, border=2)
+#' plot(as.im(data.binary, W=KC.entropy$area.tess$window), main="",
+#'      col=grDevices::gray(seq(1,0,l=length(unique(c(data.binary))))), ribbon=FALSE)
+#' plot(KC.entropy$area.tess, add=TRUE, border=2)
 #'
 #' #POINT DATA
 #'
@@ -369,7 +454,7 @@ batty=function(data, category=1, cell.size=1, partition=10){
 #' KC.entropy=karlstrom(data)
 #' ##to plot
 #' plot(data)
-#' plot(KC.entropy$areas.tess, add=TRUE, border=2)
+#' plot(KC.entropy$area.tess, add=TRUE, border=2)
 #'
 #' #marked pp
 #' data=ppp(x=runif(100, 0, 10), y=runif(100, 0, 10), window=square(10),
@@ -379,14 +464,14 @@ batty=function(data, category=1, cell.size=1, partition=10){
 #' #if you want to compute the entropy on a category, say 3
 #' KC.entropy=karlstrom(data, category=3)
 #' ##to plot using the selected category
-#' ind=which(marks(data)==3)
+#' ind=which(spatstat.geom::marks(data)==3)
 #' data.binary=unmark(data[ind])
 #' plot(data.binary)
-#' plot(KC.entropy$areas.tess, add=TRUE, border=2)
+#' plot(KC.entropy$area.tess, add=TRUE, border=2)
 #'
 #' @export
 
-karlstrom=function(data, category=1, cell.size=1, partition=10, neigh=4, method="number"){
+karlstrom=function(data, category=1, cell.size=1, partition=10, win=NULL, neigh=4, method="number"){
 
   if(!is.matrix(data) & !spatstat.geom::is.ppp(data))
     stop("For grid data, please provide the dataset as a matrix;
@@ -400,49 +485,105 @@ karlstrom=function(data, category=1, cell.size=1, partition=10, neigh=4, method=
       datavec=rep(1, spatstat.geom::npoints(data))
     if(is.factor(datavec)) datavec=as.character(datavec)
     if(length(which(unique(datavec)==category))==0)
-      stop("Please choose a category that is present in the dataset.
-           If the point pattern is unmarked, category must be set to 1")
+      stop("In the function arguments, please select a category among the ones of the dataset.
+      If the data is a marked point pattern and you wish to compute entropy over all points,
+      please use unmark(data) as first argument.
+           If the point pattern is unmarked, the argument category must be set to 1")
     datavec=as.numeric(datavec==category)
-    datavec[is.na(datavec)]=0
+    #datavec[is.na(datavec)]=0
 
     #create data ppp object
     if(is.matrix(data))
     {
       ncl=ncol(data); nrw=nrow(data)
-      W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
-      xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), l=ncl)
-      yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), l=nrw))
-      coords=expand.grid(yy.c, xx.c)
-      data.pp=spatstat.geom::ppp(x=coords[,2], y=coords[,1], window=W)
-      spatstat.geom::marks(data.pp)=datavec
+
+      if(length(cell.size)==1) {
+        xsize=cell.size
+        ysize=cell.size} else {
+          xsize=cell.size[1]
+          ysize=cell.size[2]}
+
+      if(is.null(win))
+        W=spatstat.geom::owin(xrange=c(0, ncl*xsize), yrange=c(0,nrw*ysize)) else
+          W=win
+        xx.c=seq(W$xrange[1]+xsize/2, W$xrange[1]+(ncl*xsize-xsize/2), length.out=ncl)
+        yy.c=(seq(W$yrange[1]+ysize/2, W$yrange[1]+(nrw*ysize-ysize/2), length.out=nrw))
+        cooords=expand.grid(yy.c, xx.c)
+        suppressWarnings({data.pp=spatstat.geom::ppp(x=cooords[,2], y=cooords[,1], window=W)})
+        spatstat.geom::marks(data.pp)=datavec#[!is.na(datavec)]
+        spatstat.geom::plot.im(spatstat.geom::as.im(matrix(datavec, nrow(data)), W=W), main="",
+                               col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
+                               ribbon=F)
     }
+
     if (spatstat.geom::is.ppp(data)) {
       W=data$window
       data.pp=data
-      spatstat.geom::marks(data.pp)=datavec
+      spatstat.geom::marks(data.pp)=datavec[!is.na(datavec)]
+      dataplot=spatstat.geom::unmark(data.pp[spatstat.geom::marks(data.pp)==1])
+      spatstat.geom::plot.ppp(dataplot, pch=16, cex=.5, main="")
+
     }
 
     #prepare the structure of object area partition as a tessellation
     if(is.numeric(partition) | is.matrix(partition))
-      areap=spatstat.geom::dirichlet(areapart(data, G=partition, cell.size=cell.size)$G.pp) else
-        if(is.list(partition)) {
-          if(names(partition)[1]=="G.pp" & names(partition)[2]=="data.assign")
-            areap=spatstat.geom::dirichlet(partition$G.pp)
-          if(names(partition)[1]=="tiles" & names(partition)[2]=="n")
-            areap=partition
+    {
+      if(is.matrix(data))
+        areap=spatstat.geom::dirichlet(areapart(matrix(datavec,nrow(data)), G=partition,
+                                                cell.size=cell.size, win=W)$G.pp)
+      if(spatstat.geom::is.ppp(data))
+        areap=spatstat.geom::dirichlet(areapart(dataplot, G=partition,
+                                                cell.size=cell.size, win=W)$G.pp)
+    } else
+
+      if(is.list(partition) & !spatstat.geom::is.im(partition)) {
+        if(names(partition)[1]=="G.pp" & names(partition)[2]=="data.assign")
+        { areap=spatstat.geom::dirichlet(partition$G.pp)
+        spatstat.geom::plot.tess(areap, add=T, border=2)}
+        if(names(partition)[1]=="tiles" & names(partition)[2]=="n")
+        {areap=partition
+        spatstat.geom::plot.owin(areap$tiles[[1]],border=2, add=T)
+        for(ll in 2:areap$n) spatstat.geom::plot.owin(areap$tiles[[ll]],border=2, add=T)}
+      } else
+
+        if(spatstat.geom::is.tess(partition)) {
+          if(partition$window$xrange[1]!=W$xrange[1] | partition$window$xrange[2]!=W$xrange[2] |
+             partition$window$yrange[1]!=W$yrange[1] | partition$window$yrange[2]!=W$yrange[2])
+            stop("The given partition is not on the same observation window as the data")
+          if(is.null(partition$tiles)) stop("If a tessellation is provided, it should contain tiles")
+          areap=partition
+          spatstat.geom::plot.tess(partition, add=T, border=2)
         } else
-          if(spatstat.geom::is.tess(partition)) {
-            if(partition$window$xrange[1]!=W$xrange[1] | partition$window$xrange[2]!=W$xrange[2] |
-               partition$window$yrange[1]!=W$yrange[1] | partition$window$yrange[2]!=W$yrange[2])
-              stop("The given partition is not on the same observation window as the data")
-            areap=partition
-          } else stop("please provide the area partition object in an accepted format")
+
+          if(spatstat.geom::is.im(partition))
+          {
+            partnames=names(table(partition$v, useNA="no"))
+            vvv=length(partnames)
+            if(vvv==length(datavec[!is.na(datavec)]))
+              stop("You should provide an image with a limited number of categories for data partition")
+            maskv = tiles = vector("list", length=vvv)
+            for(ii in 1:vvv)
+            {
+              maskv[[ii]] = as.logical(c(partition$v)==partnames[ii])
+              tiles[[ii]] = spatstat.geom::owin(xrange = W$xrange,
+                                 yrange = W$yrange,
+                                 mask = matrix(maskv[[ii]],
+                                               nrow=partition$dim[1]))
+            }
+            areap = list(tiles = tiles, n = vvv, names = partnames)
+            spatstat.geom::plot.im(partition, main = "",
+                                   col = grDevices::gray(seq(0.9, 0.2, l = vvv)))
+            if(spatstat.geom::is.ppp(data)) spatstat.geom::plot.ppp(dataplot, add=T, pch=16, cex=.5)
+            if(is.matrix(data)) spatstat.geom::plot.ppp(data.pp[spatstat.geom::marks(data.pp)==1], add=T, pch=15, cex=.2)
+          } else stop("Please provide the area partition object in an accepted format, see ?karlstrom
+                      If a tessellation is provided, it should contain tiles")
 
     n.G=areap$n
 
     #neighbourhood
+    enclW=spatstat.geom::owin(xrange=W$xrange, yrange=W$yrange)
     centroids=matrix(unlist(lapply(areap$tiles, spatstat.geom::centroid.owin)), byrow=T, ncol=2)
-    end=spatstat.geom::ppp(centroids[,1], centroids[,2], window=W)
+    end=spatstat.geom::ppp(centroids[,1], centroids[,2], window=enclW)
     maxdist=sqrt(diff(data.pp$window$xrange)^2+diff(data.pp$window$yrange)^2)
     mindist=min(spatstat.geom::nndist(end))
     if (method=="number" & neigh%%1!=0) stop("If method=number, neigh must be an integer")
@@ -457,33 +598,43 @@ karlstrom=function(data, category=1, cell.size=1, partition=10, neigh=4, method=
     neigh.indlist=vector("list", n.G)
     for(gg in 1:n.G)
     {
-      start=spatstat.geom::ppp(centroids[gg,1], centroids[gg,2], window=W)
+      start=spatstat.geom::ppp(centroids[gg,1], centroids[gg,2], window=enclW)
       cdist=spatstat.geom::crossdist(start,end)
       if (method=="number") neigh.indlist[[gg]]=which(cdist<=sort(cdist)[neigh]) else
         if (method=="distance")  neigh.indlist[[gg]]=which(cdist<=neigh) else
           stop("Method should be set to either number or distance. If method=number, neigh must be integer.")
     }
 
-    tot.pG=sum(datavec)
-    pg=Tg=ptildeg=numeric(n.G)
+    tot.pG=sum(datavec, na.rm=T)
+    absg=pg=Tg=ptildeg=numeric(n.G)
     for(gg in 1:n.G)
     {
       subd=data.pp[areap$tiles[[gg]]]
       datatab=table(spatstat.geom::marks(subd))
       if(length(datatab[which(names(datatab)==1)])==1)
-        pg[gg]=datatab[which(names(datatab)==1)]/tot.pG
+        {absg[gg]=datatab[which(names(datatab)==1)]
+        pg[gg]=absg[gg]/tot.pG}
       Tg[gg]=spatstat.geom::area.owin(areap$tiles[[gg]])
     }
     for(gg in 1:n.G)
       ptildeg[gg]=mean(pg[neigh.indlist[[gg]]])
-    G.count=data.frame(1:n.G, pg*tot.pG, pg, ptildeg, Tg)
+    G.count=data.frame(1:n.G, absg, pg, ptildeg, Tg)
     colnames(G.count)=c("area.id", "abs.freq", "rel.freq", "neigh.mean","area.size")
 
     #karlstrom
     karl.terms=ifelse(G.count[,3]>0&G.count[,4]>0,G.count[,3]*log(1/G.count[,4]),0)
     karl.ent=sum(karl.terms)
     if(karl.ent>log(n.G)) karl.ent=log(n.G)-1e-05
+    karl.range=c(0, log(n.G))
+    names(karl.range)=c("Min", "Max")
 
-    return(list(areas.tess=areap, areas.freq=G.count,
-                karlstrom=karl.ent, rel.karl=karl.ent/log(n.G)))
+    return(list(karlstrom=karl.ent,
+                range=karl.range,
+                rel.karl=karl.ent/log(n.G),
+                areas=G.count,
+                area.tess=areap))
 }
+
+#' @rdname karlstrom
+#' @export
+battyLISA <- karlstrom

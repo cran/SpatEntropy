@@ -11,11 +11,12 @@ shannon(data)
 Alternatively, a marked \code{ppp} object.}
 }
 \value{
-a list of three elements:
+a list of four elements:
 \itemize{
-\item \code{probabilities} - a table with the estimated probabilities (relative frequencies) for all data categories;
-\item \code{shann} - Shannon's entropy;
-\item \code{rel.shann} - Shannon's relative entropy.
+\item \code{shann} Shannon's entropy
+\item \code{range} The theoretical range of Shannon's entropy, from 0 to \eqn{\log(I)}
+\item \code{rel.shann} Shannon's relative entropy
+\item \code{probabilities} a table with absolute frequencies and estimated probabilities (relative frequencies) for all data categories
 }
 }
 \description{

@@ -21,13 +21,13 @@ http://www.eea.europa.eu/data-and-maps/ data/corine-land-cover-2000-raster-1
 turinTess
 }
 \description{
-City borders of all municipalities included in the Turin dataset, in the formato of polyognal \code{owin} objects.
+City borders of all municipalities included in the Turin dataset, in the format of polyognal windows \code{owin} objects.
 }
 \details{
-This is a list of 15 observation windows created as \code{owin} objects based on the coordinates of the border polygons, for each municipality.
+The object contains a list of 15 observation windows created as \code{owin} objects based on the coordinates of the border polygons, for each municipality.
 See \code{?owin} for details.
-The list also contains the names of the municipalities, in Italian.
-Examples on the usefulness of the administrative borders can be found at the topi \link{turin}.
+The object also contains the names of the municipalities, in Italian.
+Examples on the usefulness of the administrative borders can be found at the topic \link{turin}.
 }
 \examples{
 data(turin); data(turinW); data(turinTess)

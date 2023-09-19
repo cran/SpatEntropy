@@ -4,7 +4,7 @@
 \alias{areapart}
 \title{Area partition.}
 \usage{
-areapart(data, G, cell.size = 1)
+areapart(data, G, cell.size = 1, win = NULL)
 }
 \arguments{
 \item{data}{If data are lattice, a data matrix, which can be numeric, factor, character, ...
@@ -15,6 +15,13 @@ Alternatively, a 2-column matrix with the sub-areas centroids' coordinates.}
 
 \item{cell.size}{A single number. If data are lattice, the length of the side of each pixel.
 Default to 1. Ignored if data are points.}
+
+\item{win}{Optional, the observation area given as a \code{owin} object. If
+data are a point pattern \code{ppp} object, this argument is ignored
+and the observation area is extracted from the object. If data are
+given as a matrix and the area is not specified, the default is a
+rectangle with x range from 0 to the number of columns of the data, and
+y range from 0 to the number of rows of the data.}
 }
 \value{
 A list with elements:
@@ -24,6 +31,7 @@ A list with elements:
 matched to one of the \eqn{G} areas (numbered 1 to \eqn{G}). If the dataset is an unmarked ppp
 object, the data category column is a vector of 1s.
 }
+Moreover, a plot is produced showing the data and the area partition.
 }
 \description{
 This function partitions the observation area in a number of sub-areas,
@@ -48,14 +56,6 @@ The function also works for non-binary datasets and marked ppp objects.
 data=matrix(sort(sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
 partition=areapart(data, G=5)
 partition=areapart(data, G=5, cell.size=2)
-##to plot
-#data
-plot(as.im(data, W=partition$G.pp$window), main="",
-     col=gray(seq(1,0,l=length(unique(c(data)[!is.na(c(data))])))))
-#partition centroids
-plot(partition$G.pp, add=TRUE, pch=16, col=2)
-#partition tessellation
-plot(dirichlet(partition$G.pp), add=TRUE, border=2)
 
 #providing a pre-fixed area partition
 data=matrix(sort(sample(c("a","b","c"), 100, replace=TRUE)), nrow=10)
@@ -68,10 +68,6 @@ partition=areapart(data, G=GG)
 
 data=ppp(x=runif(100), y=runif(100), window=square(1))
 partition=areapart(data, 10)
-#to plot
-plot(data)
-plot(partition$G.pp, add=TRUE, col=2, pch=16)
-plot(dirichlet(partition$G.pp), add=TRUE, border=2)
 
 #with marks
 data=ppp(x=runif(100), y=runif(100), window=square(1),

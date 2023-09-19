@@ -13,9 +13,11 @@ Alternatively, a marked \code{ppp} object.}
 \value{
 a list of three elements:
 \itemize{
-\item \code{probabilities} - a table with the estimated probabilities (relative frequencies) for all \eqn{Z} categories (data pairs);
-\item \code{shannZ} - Shannon's entropy of \eqn{Z};
-\item \code{rel.shannZ} - Shannon's relative entropy of \eqn{Z}.
+\item \code{shannZ} Shannon's entropy of \eqn{Z}
+\item \code{range} The theoretical range of Shannon's entropy of \eqn{Z},
+from 0 to \eqn{\log(R)}
+\item \code{rel.shannZ} Shannon's relative entropy of \eqn{Z}
+\item \code{probabilities} a table with absolute frequencies and estimated probabilities (relative frequencies) for all \eqn{Z} categories (data pairs)
 }
 }
 \description{

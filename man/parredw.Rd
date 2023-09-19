@@ -4,17 +4,25 @@
 \alias{parredw}
 \title{Parresol and Edwards' entropy.}
 \usage{
-parredw(data)
+parredw(
+  data,
+  win = spatstat.geom::owin(xrange = c(0, ncol(data)), yrange = c(0, nrow(data)))
+)
 }
 \arguments{
 \item{data}{A data matrix or vector, can be numeric, factor, character, ...}
+
+\item{win}{Optional, an object of class \code{owin}, the observation window for data plotting}
 }
 \value{
-a list of two elements:
+a list of four elements:
 \itemize{
-\item \code{probabilities} - a table with the estimated probabilities (relative frequencies) for all couple categories;
-\item \code{parredw} - Parresol and Edwards' entropy.
+\item \code{parredw} Parresol and Edwards' entropy
+\item \code{range} the theoretical range of Parresol and Edwards' entropy, from \eqn{-\log(I^2)} to 0
+\item\code{rel.parredw} Parresol and Edwards' relative entropy (with the same interpretation as O'Neill's relative entropy)
+\item \code{probabilities} a table with absolute frequencies and estimated probabilities (relative frequencies) for all couple categories
 }
+Moreover, a plot of the dataset is produced.
 }
 \description{
 Compute Parresol and Edwards' entropy, following Parresol and Edwards (2014),
@@ -35,7 +43,7 @@ data=matrix(sample(1:5, 100, replace=TRUE), nrow=10)
 parredw(data)
 #plot data
 plot(as.im(data, W=square(nrow(data))),
-     col=gray(seq(1,0,length.out=length(unique(c(data))))),
+     col=grDevices::gray(seq(1,0,length.out=length(unique(c(data))))),
      main="", ribbon=TRUE)
 
 #character data, rectangular grid

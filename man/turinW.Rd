@@ -19,7 +19,7 @@ An \code{owin} object with the city border for the Turin dataset.
 }
 \details{
 This observation window is an \code{owin} object created as a binary mask. See \code{?owin} for details.
-Examples on the usefulness of the window can be found at the topi \link{turin}.
+Examples on the usefulness of the window can be found at the topic \link{turin}.
 }
 \examples{
 data(turinW)

@@ -18,10 +18,11 @@ http://www.ctfs.si.edu
 raintreesCOV
 }
 \description{
-A list of two pixel images with covariates altitude and soil slope for the rainforest tree species.
+A list of two pixel images with covariates altitude and soil slope for the rainforest tree data 1 and 2,
+i.e. \link{raintrees} and \link{raintrees2}
 }
 \details{
-For details of the dataset, see \link{raintrees}. This accompanying dataset
+For details of the point datasets, see \link{raintrees} and \link{raintrees2}. This accompanying dataset
 gives information about the elevation in the study region.
 It is a list containing two pixel images, elev (elevation in metres)
 and grad (norm of elevation gradient). These pixel images are objects of class \code{im}.
@@ -34,7 +35,5 @@ to build sensible sub-areas for Batty's and Karlstrom and Ceccato's entropies
 data(raintreesCOV)
 plot(raintreesCOV, main="")
 
-#shannon entropy
-shannon(raintrees)
 }
 \keyword{datasets}

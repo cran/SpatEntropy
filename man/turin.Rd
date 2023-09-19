@@ -16,7 +16,7 @@ http://www.eea.europa.eu/data-and-maps/ data/corine-land-cover-2000-raster-1
 turin
 }
 \description{
-A lattice dataset with Turin Urban Morphological Zones.
+A lattice dataset with Turin's Urban Morphological Zones (UMZ, see EEA, 2011).
 }
 \details{
 This raster/pixel/lattice dataset comes from the EU CORINE Land Cover project (EEA, 2011) and is dated 2011.
@@ -65,7 +65,7 @@ batty.ent=batty(turin, cell.size=250, partition=10)
 #plot with partition
 data(turinW)
 #plot(as.im(turin, W=turinW), main="", col=gray(c(0.8,0)), ribbon=FALSE)
-#plot(batty.ent$areas.tess, add=TRUE, border=2)
+#plot(batty.ent$area.tess, add=TRUE, border=2)
 
 #batty's entropy with a partition based on the administrative areas
 data(turinTess)
@@ -78,7 +78,7 @@ data(turinW)
 KC.ent=karlstrom(turin, cell.size=250, partition=15, neigh=3)
 #plot with partition
 #plot(as.im(turin, W=turinW), main="", col=gray(c(0.8,0)), ribbon=FALSE)
-#plot(KC.ent$areas.tess, add=TRUE, border=2)
+#plot(KC.ent$area.tess, add=TRUE, border=2)
 
 #karlstrom and ceccato's entropy with a partition based on the administrative areas
 data(turinTess)

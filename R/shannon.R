@@ -28,11 +28,12 @@
 #' @param data A data matrix or vector, can be numeric, factor, character, ...
 #'   Alternatively, a marked \code{ppp} object.
 #'
-#' @return a list of three elements:
+#' @return a list of four elements:
 #' \itemize{
-#' \item `probabilities` - a table with the estimated probabilities (relative frequencies) for all data categories;
-#' \item `shann` - Shannon's entropy;
-#' \item `rel.shann` - Shannon's relative entropy.
+#' \item `shann` Shannon's entropy
+#' \item `range` The theoretical range of Shannon's entropy, from 0 to \eqn{\log(I)}
+#' \item `rel.shann` Shannon's relative entropy
+#' \item `probabilities` a table with absolute frequencies and estimated probabilities (relative frequencies) for all data categories
 #' }
 #'
 #' @examples
@@ -60,15 +61,23 @@ shannon=function(data)
     if(spatstat.geom::is.ppp(data)){
       if(is.null(spatstat.geom::marks(data)))
       stop("Please provide marks for the point pattern: at least two categories should be present to compute Shannon's entropy.") else
-      datavec=spatstat.geom::marks(data)
+      datavec=as.vector(spatstat.geom::marks(data))
     }
 
-  probs=prop.table(table(datavec))
+  tabb=table(datavec)
+  probs=prop.table(tabb)
   if(length(probs)==1) warning("There is only one category, so Shannon's entropy is 0")
   sh=-sum(probs*log(probs))
-  probs=as.data.frame(probs); names(probs)=c("category", "frequency")
-  return(list(probabilities=probs, shann=sh,
-              rel.shann=ifelse(nrow(probs)>1,sh/log(nrow(probs)),0)))
+  probs=data.frame("category"=names(probs),
+                   "abs.freq"=as.numeric(tabb),
+                   "rel.freq"=as.numeric(probs))
+
+  shannon.range=c(0, log(nrow(probs)))
+  names(shannon.range)=c("Min", "Max")
+  return(list(shann=sh,
+              range=shannon.range,
+              rel.shann=ifelse(nrow(probs)>1,sh/log(nrow(probs)),0),
+              probabilities=probs))
 }
 ###########################################
 
@@ -117,7 +126,7 @@ varshannon=function(data)
     if(spatstat.geom::is.ppp(data)){
       if(is.null(spatstat.geom::marks(data)))
         stop("Please provide marks for the point pattern: at least two categories should be present to compute Shannon's entropy.") else
-          datavec=spatstat.geom::marks(data)
+          datavec=as.vector(spatstat.geom::marks(data))
     }
 
   sh=shannon(datavec)$shann
@@ -159,9 +168,11 @@ varshannon=function(data)
 #'
 #' @return a list of three elements:
 #' \itemize{
-#'   \item `probabilities` - a table with the estimated probabilities (relative frequencies) for all \eqn{Z} categories (data pairs);
-#' \item `shannZ` - Shannon's entropy of \eqn{Z};
-#' \item `rel.shannZ` - Shannon's relative entropy of \eqn{Z}.
+#' \item `shannZ` Shannon's entropy of \eqn{Z}
+#' \item `range` The theoretical range of Shannon's entropy of \eqn{Z},
+#'                from 0 to \eqn{\log(R)}
+#' \item `rel.shannZ` Shannon's relative entropy of \eqn{Z}
+#' \item `probabilities` a table with absolute frequencies and estimated probabilities (relative frequencies) for all \eqn{Z} categories (data pairs)
 #' }
 #'
 #' @examples
@@ -231,8 +242,14 @@ shannonZ=function(data)
     probabilities$rel.freq=probabilities$abs.freq/sum(probabilities$abs.freq)
     shZ=-sum(probabilities$rel.freq[probabilities$rel.freq!=0]*
                log(probabilities$rel.freq[probabilities$rel.freq!=0]))
-    return(list(probabilities=probabilities, shannZ=shZ,
-                rel.shannZ=ifelse(nrow(probabilities)>1,shZ/log(nrow(probabilities)),0)))
+
+    shZ.range=c(0, log(choose(length(Xcat)+1, 2)))
+    names(shZ.range)=c("Min", "Max")
+
+    return(list(shannZ=shZ,
+                range=shZ.range,
+                rel.shannZ=ifelse(length(Xcat)>1,shZ/log(choose(length(Xcat)+1, 2)),0),
+                probabilities=probabilities))
 }
 ###########################################
 

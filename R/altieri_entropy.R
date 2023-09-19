@@ -37,11 +37,12 @@
 #'
 #' @param data If data are lattice, a data matrix, which can be numeric, factor, character, ...
 #'   If the dataset is a point pattern, `data` is a \code{ppp} object.
-#' @param cell.size A single number. If data are lattice, the length of the side of each pixel.
-#'   Default to 1. Ignored if data are points.
+#' @param cell.size A single number or a vector of length two, only needed if data are lattice. It gives the length of the side of each pixel;
+#' if the pixel is rectangular, the first number gives the horizontal side and the second number gives the vertical side. Default to 1. Ignored if data are points.
 #' @param distbreak Numeric. The chosen distance breaks for selecting pairs of pixels/points within the observation area.
-#'   The default option is \code{c(cell.size, 2cell.size)} for lattice data, and \code{c(mindist, 2mindist)} for point data,
-#'   where \code{mindist} is one tenth of the maximum distance within the observation area.
+#'   The default option is \code{c(cell.size[1], 2*cell.size[1])} for lattice data, and
+#'   \code{c(mindist, 2*mindist)} for point data,
+#'   where \code{mindist} is the first decile of the nearest neighbour distance distribution.
 #'   Only the internal breaks have to be specified, the first and last break are automatically added as 0 and the maximum distance within the observation area, respectively.
 #' @param verbose Logical. If \code{TRUE} an output is printed in order to follow the progress of the work (recommended for large dataset).
 #'   Default set to \code{FALSE}.
@@ -70,7 +71,7 @@
 #' outp=altieri(data, cell.size=2, distbreak=c(2, 5))
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,l=length(unique(c(data))))),
+#'      col=grDevices::gray(seq(1,0,l=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #' #lattice data with missing values
@@ -102,8 +103,8 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
         for point pattern data, please provide the dataset as a marked ppp object")
 
   if(is.matrix(data)) {
-    if(length(distbreak)>1 & distbreak[1]<cell.size) stop("The first distance break is too small for building any couple")
-    if(length(distbreak)>1 & distbreak[length(distbreak)]>=sqrt((nrow(data)*cell.size)^2+(ncol(data)*cell.size)^2))
+    if(length(distbreak)>1 & distbreak[1]<min(cell.size)) stop("The first distance break is too small for building any pair")
+    if(length(distbreak)>1 & distbreak[length(distbreak)]>=sqrt((nrow(data)*cell.size[length(cell.size)])^2+(ncol(data)*cell.size[1])^2))
       stop("The last distance break is equal or larger than the maximum distance over the observation area")
   }
 
@@ -116,10 +117,15 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
   if(is.matrix(data))
   {
     ncl=ncol(data); nrw=nrow(data)
-    W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
-    xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), l=ncl)
-    yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), l=nrw))
-    coords=expand.grid(yy.c, xx.c)
+      if(length(cell.size)==1) {
+        xsize=cell.size
+        ysize=cell.size} else {
+          xsize=cell.size[1]
+          ysize=cell.size[2]}
+      W=spatstat.geom::owin(xrange=c(0, ncl*xsize), yrange=c(0,nrw*ysize))
+      xx.c=seq(xsize/2, (ncl*xsize-xsize/2), length.out=ncl)
+      yy.c=rev(seq(ysize/2, (nrw*ysize-ysize/2), length.out=nrw))
+      coords=expand.grid(yy.c, xx.c)
     datavec=c(data)
     ind=which(!is.na(datavec))
     centr.pp=spatstat.geom::ppp(x=coords[ind,2], y=coords[ind,1], window=W)
@@ -134,8 +140,8 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
     spatstat.geom::marks(centr.pp)=datavec.proxy
 
     if(distbreak[1]=="default")
-      dbreak=c(0, cell.size, 2*cell.size, sqrt((nrow(data)*cell.size)^2+(ncol(data)*cell.size)^2)) else
-        dbreak=c(0, distbreak, sqrt((nrow(data)*cell.size)^2+(ncol(data)*cell.size)^2))
+      dbreak=c(0, cell.size[1], 2*cell.size[1], sqrt((nrow(data)*cell.size[length(cell.size)])^2+(ncol(data)*cell.size[1])^2)) else
+        dbreak=c(0, distbreak, sqrt((nrow(data)*cell.size[length(cell.size)])^2+(ncol(data)*cell.size[1])^2))
 
     speedstep=100
     datapairs.list=vector("list", spatstat.geom::npoints(centr.pp)%/%speedstep+
@@ -158,7 +164,7 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
         ind=which(pdis>dbreak[dd] & pdis<=dbreak[dd+1])
         if(length(ind)>0)
           datapairs.list[[ii%/%speedstep+1]][[dd]]=c(datapairs.list[[ii%/%speedstep+1]][[dd]],
-                                                     paste0(spatstat.geom::marks(start),spatstat.geom::marks(end[ind])))
+                                                     paste0(spatstat.geom::marks(start),"-", spatstat.geom::marks(end[ind])))
       }
       if(verbose) {if(ii%%100==0) print(paste0("Done for ", ii, "/", spatstat.geom::npoints(centr.pp), " (non-NA) observations"))}
     }
@@ -178,7 +184,7 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
     cat("All done", fill=T)
 
     shZ=shannonZ(data)
-    names(shZ)=c("marginal distribution", "shannZ", "rel.shannZ")
+    names(shZ)=c("shannZ", "range", "rel.shannZ", "marginal distribution")
   }
 
   if (spatstat.geom::is.ppp(data)) {
@@ -195,7 +201,7 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
 
     if(distbreak[1]=="default")
     {
-      mindist=sqrt(diff(data$window$xrange)^2+diff(data$window$yrange)^2)/10
+      mindist=stats::quantile(spatstat.geom::nndist(data), probs=0.1)
       dbreak=c(0, mindist, 2*mindist, sqrt(diff(data$window$xrange)^2+diff(data$window$yrange)^2))
     } else
     dbreak=c(0, distbreak, sqrt(diff(data$window$xrange)^2+diff(data$window$yrange)^2))
@@ -242,7 +248,7 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
     cat("All done", fill=T)
 
     shZ=shannonZ(datavec)
-    names(shZ)=c("marginal distribution", "shannZ", "rel.shannZ")
+    names(shZ)=c("shannZ", "range", "rel.shannZ", "marginal distribution")
   }
 
   if(any(lapply(datapairs,length)==0))
@@ -322,11 +328,34 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
   mut.global=sum(P.wk*mut.partial)
   #sum(P.wk*(res.partial + mut.partial)) #check that this equals shZ$shannZ
 
+  PIprop = if(length(Xcat)>1) mut.partial/(mut.partial+res.partial) else NA
+  RESprop = if(length(Xcat)>1) res.partial/(mut.partial+res.partial) else NA
+
+  #barplot of PI and RES proportional terms
+  if(length(Xcat)>1){
+    graphics::par(mar = c(5, 4, 2, 2) + 0.1)
+    graphics::barplot(height = rbind(PIprop, RESprop), ylim=c(0, 1.2),
+          beside = F, col = c("darkgray", "white"),
+          #names.arg = paste0("w", 1:length(PIprop)),
+          names.arg=paste0("[", round(dbreak[1:(length(dbreak)-1)],2), ", ", round(dbreak[2:length(dbreak)],2), "]"),
+          xlab="Distance classes", yaxt="n",
+          main = "Partial information in proportional terms",
+          cex.names = .8, cex.axis = 1, cex.main=1)
+    graphics::axis(2, at=seq(0,1,by=0.2), labels=seq(0,1,by=0.2))
+    graphics::points(c(1,1), c(1.05, 1.15), pch=22, bg = c("darkgray", "white"))
+    if(length(PIprop)<=4) xxx=2 else xxx=length(PIprop)-2
+    graphics::text(x=xxx, y=1.05, labels="P. informat")
+    graphics::text(x=xxx, y=1.15, labels="P. residual")
+
+    #legend("top", pch=2, col = c("darkgray", "white"),
+    #       horiz=T, legend=c("Part. inform", "Part. resid"))
+  }
+
   return(list("distance.breaks"=wks,
               "SPI.terms"=mut.partial,
-              "rel.SPI.terms"=if(length(Xcat)>1)mut.partial/(mut.partial+res.partial) else NA,
+              "rel.SPI.terms"=PIprop,
               "RES.terms"=res.partial,
-              "rel.RES.terms"=if(length(Xcat)>1)res.partial/(mut.partial+res.partial) else NA,
+              "rel.RES.terms"=RESprop,
               "SMI"=mut.global, "RES"=res.global,
               "ShannonZ"=shZ,
               "W.distribution"=P.wk, "total.pairs"=QQ,

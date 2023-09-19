@@ -10,12 +10,13 @@ altieri(data, cell.size = 1, distbreak = "default", verbose = F)
 \item{data}{If data are lattice, a data matrix, which can be numeric, factor, character, ...
 If the dataset is a point pattern, \code{data} is a \code{ppp} object.}
 
-\item{cell.size}{A single number. If data are lattice, the length of the side of each pixel.
-Default to 1. Ignored if data are points.}
+\item{cell.size}{A single number or a vector of length two, only needed if data are lattice. It gives the length of the side of each pixel;
+if the pixel is rectangular, the first number gives the horizontal side and the second number gives the vertical side. Default to 1. Ignored if data are points.}
 
 \item{distbreak}{Numeric. The chosen distance breaks for selecting pairs of pixels/points within the observation area.
-The default option is \code{c(cell.size, 2cell.size)} for lattice data, and \code{c(mindist, 2mindist)} for point data,
-where \code{mindist} is one tenth of the maximum distance within the observation area.
+The default option is \code{c(cell.size[1], 2*cell.size[1])} for lattice data, and
+\code{c(mindist, 2*mindist)} for point data,
+where \code{mindist} is the first decile of the nearest neighbour distance distribution.
 Only the internal breaks have to be specified, the first and last break are automatically added as 0 and the maximum distance within the observation area, respectively.}
 
 \item{verbose}{Logical. If \code{TRUE} an output is printed in order to follow the progress of the work (recommended for large dataset).
@@ -76,7 +77,7 @@ outp=altieri(data, cell.size=2) #same result
 outp=altieri(data, cell.size=2, distbreak=c(2, 5))
 #plot data
 plot(as.im(data, W=square(nrow(data))),
-     col=gray(seq(1,0,l=length(unique(c(data))))),
+     col=grDevices::gray(seq(1,0,l=length(unique(c(data))))),
      main="", ribbon=TRUE)
 
 #lattice data with missing values

@@ -3,6 +3,7 @@
 export(altieri)
 export(areapart)
 export(batty)
+export(battyLISA)
 export(contagion)
 export(karlstrom)
 export(leibovici)

@@ -57,5 +57,6 @@
 #'@docType package
 #'@name SpatEntropy
 #'@import spatstat
+#'@aliases SpatEntropy-package
 
 NULL

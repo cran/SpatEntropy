@@ -29,13 +29,16 @@
 #'All NAs are ignored in the computation and only couples of non-NA observations are considered.
 #'
 #' @param data A data matrix, can be numeric, factor, character, ...
+#' @param win Optional, an object of class \code{owin}, the observation window for data plotting
 #'
-#' @return a list of three elements:
+#' @return a list of four elements:
 #' \itemize{
-#'   \item `probabilities` - a table with the estimated probabilities (relative frequencies) for all couple categories;
-#' \item `oneill` - O'Neill's entropy;
-#' \item`rel.oneill` - O'Neill's relative entropy.
+#' \item `oneill` O'Neill's entropy
+#' \item `range` the theoretical range of O'Neill's entropy, from 0 to \eqn{\log(I^2)}
+#' \item`rel.oneill` O'Neill's relative entropy
+#' \item `probabilities` a table with absolute frequencies and estimated probabilities (relative frequencies) for all couple categories
 #' }
+#' Moreover, a plot of the dataset is produced.
 #'
 #' @examples
 #' #numeric data, square grid
@@ -43,7 +46,7 @@
 #' oneill(data)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,length.out=length(unique(c(data))))),
+#'      col=grDevices::gray(seq(1,0,length.out=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #' #character data, rectangular grid
@@ -61,12 +64,16 @@
 #'
 #' @export
 
-oneill=function(data)
+oneill=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(0, nrow(data))))
 {
   if(!is.matrix(data))
     stop("This function works for grid data. Please provide the dataset as a matrix, or use the function -leibovici- instead")
 
+  spatstat.geom::plot.im(spatstat.geom::as.im(matrix(c(data), nrow(data)), W=win), main="",
+                         col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
+                         ribbon=T)
   Xcat=unique(c(data)[!is.na(c(data))])
+  if(length(Xcat)==1) warning("Data must have at least two categories to compute entropy")
 
   datapairs=c()
   for(i in 1:(nrow(data)-1))
@@ -88,7 +95,15 @@ oneill=function(data)
 
   terms=ifelse(probabilities$rel.freq!=0, probabilities$rel.freq*log(probabilities$rel.freq), 0)
   oneill=-sum(terms)
-  return(list(probabilities=probabilities, oneill=oneill, rel.oneill=oneill/log(length(Xcat)^2)))
+
+  oneill.range=c(0, log(length(Xcat)^2))
+  names(oneill.range)=c("Min", "Max")
+
+  return(list(oneill=oneill,
+              range=oneill.range,
+              rel.oneill=oneill/log(length(Xcat)^2),
+              probabilities=probabilities))
+
 }
 
 ###########################################
@@ -118,17 +133,23 @@ oneill=function(data)
 #'
 #' @param data If data are lattice, a data matrix, which can be numeric, factor, character, ...
 #'   If the dataset is a point pattern, `data` is a \code{ppp} object.
-#' @param cell.size A single number. If data are lattice, the length of the side of each pixel. Default to 1. Ignored if data are points.
-#' @param ccdist A single number. The chosen distance for selecting couples of pixels/points within the observation area. Default to \code{cell.size}.
+#' @param cell.size A single number or a vector of length two, only needed if data are lattice. It gives the length of the side of each pixel;
+#' if the pixel is rectangular, the first number gives the horizontal side and the second number gives the vertical side. Default to 1. Ignored if data are points.
+#' @param ccdist A single number. The chosen distance for selecting couples of pixels/points within the observation area. Default to \code{cell.size[1]}.
+#' @param win Optional, an object of class \code{owin}, the observation window for data plotting
 #' @param verbose Logical. If \code{TRUE} an output is printed in order to follow the progress of the work (recommended for large dataset).
 #'   Default set to \code{FALSE}.
 #'
-#' @return a list of three elements:
-#'\itemize{
-#'   \item  `probabilities` - a table with the estimated probabilities (relative frequencies) for all couple categories;
-#' \item `leib` - Leibovici's entropy;
-#' \item `rel.leib` - Leibovici's relative entropy.
+#' @return a list of four elements:
+#' \itemize{
+#' \item `leib` Leibovici's entropy
+#' \item `range` the theoretical range of Leibovici's entropy, from 0 to \eqn{\log(I^2)}
+#' \item `rel.leib` Leibovici's relative entropy
+#' \item `probabilities` a table with absolute frequencies and estimated probabilities (relative frequencies) for all couple categories
 #' }
+#' Moreover, a plot of the dataset is produced. Over the plot, a random point is displayed as a red star, and a circle is plotted
+#' around that point. The radius of the circle is set by \code{ccdist}, so that a visual idea is given about the
+#' choice of the distance for building co-occurrences.
 #'
 #' @examples
 #'#random grid data - high entropy
@@ -136,11 +157,12 @@ oneill=function(data)
 #' leibovici(data, cell.size=1, ccdist=2)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,length.out=length(unique(c(data))))),
+#'      col=grDevices::gray(seq(1,0,length.out=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #'#compact grid data - low entropy
 #' data=matrix(sort(sample(c("a","b","c"), 400, replace=TRUE)), nrow=20)
+#' #Note: with sorted data, only some couple categories will be present
 #' leibovici(data, cell.size=1, ccdist=1.5)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
@@ -148,25 +170,23 @@ oneill=function(data)
 #'      main="", ribbon=TRUE)
 #'
 #'#point data
-#' data=ppp(x=runif(400), y=runif(400), window=square(1), marks=sample(1:4, 400, replace=TRUE))
+#' data=ppp(x=runif(400), y=runif(400),
+#' window=square(1), marks=sample(1:4, 400, replace=TRUE))
 #' leibovici(data, ccdist=0.1)
 #' #plot data
 #' plot(data)
-#' #nicer plot
-#' data.cat=data; marks(data.cat)=as.character(marks(data))
-#' plot(data.cat, cols=1:length(unique(marks(data.cat))), main="", pch=16)
 #'
 #' @export
 
-leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
+leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
 {
   if(!is.matrix(data) & ! spatstat.geom::is.ppp(data))
     stop("For grid data, please provide the dataset as a matrix;
         for point pattern data, please provide the dataset as a marked ppp object")
 
   if(is.matrix(data)) {
-    if(ccdist<cell.size) stop("The distance of interest is too small for building any couple")
-    if(ccdist>=sqrt((nrow(data)*cell.size)^2+(ncol(data)*cell.size)^2))
+    if(ccdist<min(cell.size)) stop("The distance of interest is too small for building any couple")
+    if(ccdist>=sqrt((nrow(data)*cell.size[length(cell.size)])^2+(ncol(data)*cell.size[1])^2))
       stop("The chosen distance is equal or larger than the maximum distance over the observation area. Maybe you wish to compute the non-spatial Shannon's entropy of Z instead?")
   }
 
@@ -176,7 +196,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
       stop("The chosen distance is equal or larger than the maximum distance over the observation area. Maybe you wish to compute the non-spatial Shannon's entropy of Z instead?")
   }
 
-  if(is.matrix(data) & ccdist==cell.size) {
+  if(is.matrix(data) & length(cell.size)==1 & ccdist==cell.size[1]) {
     outp=oneill(data)
     return(list(probabilities=outp$probabilities, leib=outp$oneill, rel.leib=outp$rel.oneill))
   }
@@ -184,18 +204,25 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
   if(is.matrix(data))
   {
     ncl=ncol(data); nrw=nrow(data)
-    W=spatstat.geom::owin(xrange=c(0, ncl*cell.size), yrange=c(0,nrw*cell.size))
-    xx.c=seq(cell.size/2, (ncl*cell.size-cell.size/2), length.out=ncl)
-    yy.c=rev(seq(cell.size/2, (nrw*cell.size-cell.size/2), length.out=nrw))
-    coords=expand.grid(yy.c, xx.c)
+    if(length(cell.size)==1) {
+      xsize=cell.size
+      ysize=cell.size} else {
+        xsize=cell.size[1]
+        ysize=cell.size[2]}
+    if(is.null(win))
+      W=spatstat.geom::owin(xrange=c(0, ncl*xsize), yrange=c(0,nrw*ysize)) else
+        W=win
+      xx.c=seq(W$xrange[1]+xsize/2, W$xrange[1]+(ncl*xsize-xsize/2), length.out=ncl)
+      yy.c=(seq(W$yrange[1]+ysize/2, W$yrange[1]+(nrw*ysize-ysize/2), length.out=nrw))
+    cooords=expand.grid(yy.c, xx.c)
     datavec=c(data)
     ind=which(!is.na(datavec))
-    centr.pp=spatstat.geom::ppp(x=coords[ind,2], y=coords[ind,1], window=W)
+    centr.pp=spatstat.geom::ppp(x=cooords[ind,2], y=cooords[ind,1], window=W)
     datavec=datavec[ind]
     data.tab=table(datavec)
     Xcat=names(data.tab)
     if(length(Xcat)==1)
-      warning("There is only one category in the data, so all entropies will be equal to 0. You may stop the function to avoid wasting time.")
+      warning("There is only one category in the dataset, so the entropy will be equal to 0")
     Xcat.proxy=1:length(Xcat)
     datavec.proxy=c()
     for(ii in 1:length(datavec)) datavec.proxy[ii]=Xcat.proxy[which(Xcat==datavec[ii])]
@@ -230,10 +257,11 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
   if (spatstat.geom::is.ppp(data)) {
     datavec=spatstat.geom::marks(data)
     if(is.factor(datavec)) datavec=as.character(datavec)
+    if(is.null(spatstat.geom::marks(data))) datavec=rep(1, data$n)
     data.tab=table(datavec)
     Xcat=names(data.tab)
     if(length(Xcat)==1)
-      warning("There is only one category in the data, so all entropies will be equal to 0. You may stop the function to avoid wasting time.")
+      warning("There is only one category in the dataset, so the entropy will be equal to 0")
     Xcat.proxy=1:length(Xcat)
     datavec.proxy=c()
     for(ii in 1:length(datavec)) datavec.proxy[ii]=Xcat.proxy[which(Xcat==datavec[ii])]
@@ -282,7 +310,40 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
 
   terms=ifelse(probabilities$rel.freq!=0, probabilities$rel.freq*log(probabilities$rel.freq), 0)
   leib=-sum(terms)
-  return(list(probabilities=probabilities, leib=leib, rel.leib=leib/log(length(Xcat)^2)))
+
+  leib.range=c(0, log(length(Xcat)^2))
+  names(leib.range)=c("Min", "Max")
+
+  if(spatstat.geom::is.ppp(data)){
+    data.cat=data; spatstat.geom::marks(data.cat)=as.character(spatstat.geom::marks(data))
+    spatstat.geom::plot.ppp(data.cat, cols=(1:(length(unique(spatstat.geom::marks(data.cat)))+1))[-2],
+                            main="", pch=16, cex=.5)
+    spatstat.geom::plot.ppp(spatstat.geom::ppp(spatstat.geom::centroid.owin(data$window)$x,
+                                spatstat.geom::centroid.owin(data$window)$y,
+                                window=data$window), add=T, pch="*", cex=1.5, col=2)
+    spatstat.geom::plot.owin(spatstat.geom::disc(radius = ccdist,
+                                  centre = spatstat.geom::centroid.owin(data$window)),
+                             add=T, border=2, lwd=2)
+  }
+  if(is.matrix(data)){
+    if(is.null(win))
+      win=spatstat.geom::owin(xrange=c(0, ncol(data)*xsize), yrange=c(0, nrow(data)*ysize))
+    spatstat.geom::plot.im(spatstat.geom::as.im(matrix(c(data), nrow(data)), W=win), main="",
+                           col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
+                           ribbon=T)
+    spatstat.geom::plot.ppp(spatstat.geom::ppp(spatstat.geom::centroid.owin(win)$x,
+                                spatstat.geom::centroid.owin(win)$y,
+                                window=win), add=T, pch="*", cex=1.5, col=2)
+    spatstat.geom::plot.owin(spatstat.geom::disc(radius = ccdist,
+                                  centre = spatstat.geom::centroid.owin(win)),
+                             add=T, border=2, lwd=2)
+
+  }
+
+  return(list(leib=leib,
+              range=leib.range,
+              rel.leib=leib/log(length(Xcat)^2),
+              probabilities=probabilities))
 }
 
 ###########################################
@@ -307,12 +368,14 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
 #'All NAs are ignored in the computation and only couples of non-NA observations are considered.
 #'
 #' @param data A data matrix or vector, can be numeric, factor, character, ...
+#' @param win Optional, an object of class \code{owin}, the observation window for data plotting
 #'
 #' @return a list of two elements:
 #' \itemize{
-#'   \item `probabilities` - a table with the estimated probabilities (relative frequencies) for all couple categories;
-#' \item `contagion` - Li and Reynold's contagion index.
+#' \item `contagion` Li and Reynold's relative contagion index
+#'   \item `probabilities` a table with absolute frequencies and estimated probabilities (relative frequencies) for all couple categories
 #' }
+#' Moreover, a plot of the dataset is produced.
 #'
 #' @examples
 #' #numeric data, square grid
@@ -320,7 +383,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
 #' contagion(data)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,length.out=length(unique(c(data))))),
+#'      col=grDevices::gray(seq(1,0,length.out=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #' #character data, rectangular grid
@@ -333,10 +396,11 @@ leibovici=function(data, cell.size=1, ccdist=cell.size, verbose=F)
 #'
 #' @export
 
-contagion=function(data)
+contagion=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(0, nrow(data))))
 {
-  outp=oneill(data)
-  return(list(probabilities=outp$probabilities, contagion=1-outp$rel.oneill))
+  outp=oneill(data, win)
+  return(list(contagion=1-outp$rel.oneill,
+              probabilities=outp$probabilities))
 }
 ###########################################
 
@@ -357,12 +421,16 @@ contagion=function(data)
 #'All NAs are ignored in the computation and only couples of non-NA observations are considered.
 #'
 #' @param data A data matrix or vector, can be numeric, factor, character, ...
+#' @param win Optional, an object of class \code{owin}, the observation window for data plotting
 #'
-#' @return a list of two elements:
+#' @return a list of four elements:
 #' \itemize{
-#'   \item `probabilities` - a table with the estimated probabilities (relative frequencies) for all couple categories;
-#' \item `parredw` - Parresol and Edwards' entropy.
+#' \item `parredw` Parresol and Edwards' entropy
+#' \item `range` the theoretical range of Parresol and Edwards' entropy, from \eqn{-\log(I^2)} to 0
+#' \item`rel.parredw` Parresol and Edwards' relative entropy (with the same interpretation as O'Neill's relative entropy)
+#' \item `probabilities` a table with absolute frequencies and estimated probabilities (relative frequencies) for all couple categories
 #' }
+#' Moreover, a plot of the dataset is produced.
 #'
 #' @examples
 #' #numeric data, square grid
@@ -370,7 +438,7 @@ contagion=function(data)
 #' parredw(data)
 #' #plot data
 #' plot(as.im(data, W=square(nrow(data))),
-#'      col=gray(seq(1,0,length.out=length(unique(c(data))))),
+#'      col=grDevices::gray(seq(1,0,length.out=length(unique(c(data))))),
 #'      main="", ribbon=TRUE)
 #'
 #' #character data, rectangular grid
@@ -383,9 +451,14 @@ contagion=function(data)
 #'
 #' @export
 
-parredw=function(data)
+parredw=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(0, nrow(data))))
 {
-  outp=oneill(data)
-  return(list(probabilities=outp$probabilities, parredw=-outp$oneill))
+  outp=oneill(data, win)
+  parr.range=-rev(outp$range)
+  names(parr.range)=c("Min", "Max")
+  return(list(parredw=-outp$oneill,
+              range=parr.range,
+              rel.parredw=as.numeric(-outp$oneill/parr.range[1]),
+              probabilities=outp$probabilities))
 }
 ###########################################

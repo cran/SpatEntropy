@@ -4,26 +4,33 @@
 \alias{leibovici}
 \title{Leibovici's entropy.}
 \usage{
-leibovici(data, cell.size = 1, ccdist = cell.size, verbose = F)
+leibovici(data, cell.size = 1, ccdist = cell.size[1], win = NULL, verbose = F)
 }
 \arguments{
 \item{data}{If data are lattice, a data matrix, which can be numeric, factor, character, ...
 If the dataset is a point pattern, \code{data} is a \code{ppp} object.}
 
-\item{cell.size}{A single number. If data are lattice, the length of the side of each pixel. Default to 1. Ignored if data are points.}
+\item{cell.size}{A single number or a vector of length two, only needed if data are lattice. It gives the length of the side of each pixel;
+if the pixel is rectangular, the first number gives the horizontal side and the second number gives the vertical side. Default to 1. Ignored if data are points.}
 
-\item{ccdist}{A single number. The chosen distance for selecting couples of pixels/points within the observation area. Default to \code{cell.size}.}
+\item{ccdist}{A single number. The chosen distance for selecting couples of pixels/points within the observation area. Default to \code{cell.size[1]}.}
+
+\item{win}{Optional, an object of class \code{owin}, the observation window for data plotting}
 
 \item{verbose}{Logical. If \code{TRUE} an output is printed in order to follow the progress of the work (recommended for large dataset).
 Default set to \code{FALSE}.}
 }
 \value{
-a list of three elements:
+a list of four elements:
 \itemize{
-\item  \code{probabilities} - a table with the estimated probabilities (relative frequencies) for all couple categories;
-\item \code{leib} - Leibovici's entropy;
-\item \code{rel.leib} - Leibovici's relative entropy.
+\item \code{leib} Leibovici's entropy
+\item \code{range} the theoretical range of Leibovici's entropy, from 0 to \eqn{\log(I^2)}
+\item \code{rel.leib} Leibovici's relative entropy
+\item \code{probabilities} a table with absolute frequencies and estimated probabilities (relative frequencies) for all couple categories
 }
+Moreover, a plot of the dataset is produced. Over the plot, a random point is displayed as a red star, and a circle is plotted
+around that point. The radius of the circle is set by \code{ccdist}, so that a visual idea is given about the
+choice of the distance for building co-occurrences.
 }
 \description{
 This function computes Leibovici's entropy according to a chosen distance \eqn{d}
@@ -53,11 +60,12 @@ data=matrix(sample(c("a","b","c"), 400, replace=TRUE), nrow=20)
 leibovici(data, cell.size=1, ccdist=2)
 #plot data
 plot(as.im(data, W=square(nrow(data))),
-     col=gray(seq(1,0,length.out=length(unique(c(data))))),
+     col=grDevices::gray(seq(1,0,length.out=length(unique(c(data))))),
      main="", ribbon=TRUE)
 
 #compact grid data - low entropy
 data=matrix(sort(sample(c("a","b","c"), 400, replace=TRUE)), nrow=20)
+#Note: with sorted data, only some couple categories will be present
 leibovici(data, cell.size=1, ccdist=1.5)
 #plot data
 plot(as.im(data, W=square(nrow(data))),
@@ -65,12 +73,10 @@ plot(as.im(data, W=square(nrow(data))),
      main="", ribbon=TRUE)
 
 #point data
-data=ppp(x=runif(400), y=runif(400), window=square(1), marks=sample(1:4, 400, replace=TRUE))
+data=ppp(x=runif(400), y=runif(400),
+window=square(1), marks=sample(1:4, 400, replace=TRUE))
 leibovici(data, ccdist=0.1)
 #plot data
 plot(data)
-#nicer plot
-data.cat=data; marks(data.cat)=as.character(marks(data))
-plot(data.cat, cols=1:length(unique(marks(data.cat))), main="", pch=16)
 
 }

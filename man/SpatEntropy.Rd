@@ -3,6 +3,7 @@
 \docType{package}
 \name{SpatEntropy}
 \alias{SpatEntropy}
+\alias{SpatEntropy-package}
 \title{SpatEntropy: a package for computing spatial entropy measures.}
 \description{
 The heterogeneity of spatial data presenting a finite number of categories
