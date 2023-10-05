@@ -1,10 +1,10 @@
-1c4cddf22094c3f9e0f15f852e0d41fb *DESCRIPTION
+37824a49bfc18da69d143865661c7b59 *DESCRIPTION
 bfd67436a0c8f612314b0e03ed80a6a0 *NAMESPACE
 38380230a39eb89d8fc40cdafe73260d *R/SpatEntropy.R
 fb058335534bd17f06017425fd8e00be *R/altieri_entropy.R
 7a6b28e6b90ed656e7169a45ba4737a7 *R/batty_karlstrom_entropy.R
 7a3017b46f9d3deaf5a404773e4d613f *R/data.R
-638dcacf4cd9eb8d35dca5ecd77009d6 *R/oneill_leibovici_entropy.R
+147f556b08266bbd1b1851c5a341e788 *R/oneill_leibovici_entropy.R
 a684e3723e9e18e867b8a4e54953a0bf *R/shannon.R
 0edf7cff37f0273128127952256bf2cc *data/bologna.RData
 845440f94666355b35171502520d086f *data/bolognaTess.RData

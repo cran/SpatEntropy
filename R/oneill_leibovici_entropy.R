@@ -79,12 +79,14 @@ oneill=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(
   for(i in 1:(nrow(data)-1))
   {
     ind=which(!is.na(data[i,]) & !is.na(data[i+1,]))
-    datapairs=c(datapairs, paste0(data[i,ind],"-",data[i+1,ind]))
+    if(length(ind)>0)
+      datapairs=c(datapairs, paste0(data[i,ind],"-",data[i+1,ind]))
   }
   for(j in 1:(ncol(data)-1))
   {
     ind=which(!is.na(data[,j]) & !is.na(data[,j+1]))
-    datapairs=c(datapairs, paste0(data[ind,j], "-",data[ind,j+1]))
+    if(length(ind)>0)
+      datapairs=c(datapairs, paste0(data[ind,j], "-",data[ind,j+1]))
   }
   tabpairs=table(datapairs)
 

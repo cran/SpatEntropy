@@ -1,7 +1,7 @@
 Package: SpatEntropy
 Type: Package
 Title: Spatial Entropy Measures
-Version: 2.2-1
+Version: 2.2-2
 Author: L. Altieri, D. Cocchi, G. Roli
 Maintainer: Altieri Linda <linda.altieri@unibo.it>
 Depends: R (>= 4.0.0), spatstat (>= 3.0-2)
@@ -12,6 +12,6 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
 NeedsCompilation: no
-Packaged: 2023-09-19 12:46:19 UTC; linda.altieri4
+Packaged: 2023-10-05 07:51:49 UTC; linda.altieri4
 Repository: CRAN
-Date/Publication: 2023-09-19 14:10:11 UTC
+Date/Publication: 2023-10-05 08:10:06 UTC
