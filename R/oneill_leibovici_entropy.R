@@ -219,7 +219,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
     cooords=expand.grid(yy.c, xx.c)
     datavec=c(data)
     ind=which(!is.na(datavec))
-    centr.pp=spatstat.geom::ppp(x=cooords[ind,2], y=cooords[ind,1], window=W)
+    centr.pp=spatstat.geom::ppp(x=cooords[ind,2], y=rev(cooords[ind,1]), window=W)
     datavec=datavec[ind]
     data.tab=table(datavec)
     Xcat=names(data.tab)
@@ -239,7 +239,8 @@ leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
     for(ii in 1:(spatstat.geom::npoints(centr.pp)-1))
     {
       start=centr.pp[ii]
-      end=centr.pp[(ii+1):spatstat.geom::npoints(centr.pp)]
+      possend=centr.pp[-ii]
+      end=possend[which(possend$x>=start$x & possend$y<=start$y)]
       pdis=c(spatstat.geom::crossdist(start,end))
       ind=which(pdis<=ccdist)
       if(length(ind)>0)
@@ -279,7 +280,8 @@ leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
     for(ii in 1:(spatstat.geom::npoints(data)-1))
     {
       start=data[ii]
-      end=data[(ii+1):spatstat.geom::npoints(data)]
+      possend=data[-ii]
+      end=possend[which(possend$x>=start$x & possend$y<=start$y)]
       pdis=c(spatstat.geom::crossdist(start,end))
       ind=which(pdis<=ccdist)
       if(length(ind)>0)

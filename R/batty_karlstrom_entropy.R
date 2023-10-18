@@ -257,9 +257,9 @@ batty=function(data, category=1, cell.size=1, partition=10, win=NULL){
       cooords=expand.grid(yy.c, xx.c)
       suppressWarnings({data.pp=spatstat.geom::ppp(x=cooords[,2], y=cooords[,1], window=W)})
       spatstat.geom::marks(data.pp)=datavec#[!is.na(datavec)]
-      spatstat.geom::plot.im(spatstat.geom::as.im(matrix(datavec, nrow(data)), W=W), main="",
-                             col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
-                             ribbon=F)
+      #spatstat.geom::plot.im(spatstat.geom::as.im(matrix(datavec, nrow(data)), W=W), main="",
+      #                       col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
+      #                       ribbon=F)
     }
 
     if (spatstat.geom::is.ppp(data)) {
@@ -267,7 +267,7 @@ batty=function(data, category=1, cell.size=1, partition=10, win=NULL){
       data.pp=data
       spatstat.geom::marks(data.pp)=datavec[!is.na(datavec)]
       dataplot=spatstat.geom::unmark(data.pp[spatstat.geom::marks(data.pp)==1])
-      spatstat.geom::plot.ppp(dataplot, pch=16, cex=.5, main="")
+      #spatstat.geom::plot.ppp(dataplot, pch=16, cex=.5, main="")
 
     }
 
@@ -511,9 +511,9 @@ karlstrom=function(data, category=1, cell.size=1, partition=10, win=NULL, neigh=
         cooords=expand.grid(yy.c, xx.c)
         suppressWarnings({data.pp=spatstat.geom::ppp(x=cooords[,2], y=cooords[,1], window=W)})
         spatstat.geom::marks(data.pp)=datavec#[!is.na(datavec)]
-        spatstat.geom::plot.im(spatstat.geom::as.im(matrix(datavec, nrow(data)), W=W), main="",
-                               col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
-                               ribbon=F)
+        #spatstat.geom::plot.im(spatstat.geom::as.im(matrix(datavec, nrow(data)), W=W), main="",
+        #                       col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
+        #                       ribbon=F)
     }
 
     if (spatstat.geom::is.ppp(data)) {
@@ -521,7 +521,7 @@ karlstrom=function(data, category=1, cell.size=1, partition=10, win=NULL, neigh=
       data.pp=data
       spatstat.geom::marks(data.pp)=datavec[!is.na(datavec)]
       dataplot=spatstat.geom::unmark(data.pp[spatstat.geom::marks(data.pp)==1])
-      spatstat.geom::plot.ppp(dataplot, pch=16, cex=.5, main="")
+      #spatstat.geom::plot.ppp(dataplot, pch=16, cex=.5, main="")
 
     }
 
