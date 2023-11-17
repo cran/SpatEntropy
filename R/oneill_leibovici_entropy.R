@@ -30,6 +30,7 @@
 #'
 #' @param data A data matrix, can be numeric, factor, character, ...
 #' @param win Optional, an object of class \code{owin}, the observation window for data plotting
+#' @param plotout Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.
 #'
 #' @return a list of four elements:
 #' \itemize{
@@ -64,11 +65,12 @@
 #'
 #' @export
 
-oneill=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(0, nrow(data))))
+oneill=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)),
+                                              yrange=c(0, nrow(data))), plotout=T)
 {
   if(!is.matrix(data))
     stop("This function works for grid data. Please provide the dataset as a matrix, or use the function -leibovici- instead")
-
+  if(plotout==T)
   spatstat.geom::plot.im(spatstat.geom::as.im(matrix(c(data), nrow(data)), W=win), main="",
                          col=grDevices::gray(seq(0.9,0.1,l=length(unique(c(data)[!is.na(c(data))])))),
                          ribbon=T)
@@ -141,6 +143,7 @@ oneill=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(
 #' @param win Optional, an object of class \code{owin}, the observation window for data plotting
 #' @param verbose Logical. If \code{TRUE} an output is printed in order to follow the progress of the work (recommended for large dataset).
 #'   Default set to \code{FALSE}.
+#' @param plotout Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.
 #'
 #' @return a list of four elements:
 #' \itemize{
@@ -180,7 +183,8 @@ oneill=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(
 #'
 #' @export
 
-leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
+leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL,
+                   verbose=F, plotout=T)
 {
   if(!is.matrix(data) & ! spatstat.geom::is.ppp(data))
     stop("For grid data, please provide the dataset as a matrix;
@@ -199,7 +203,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
   }
 
   if(is.matrix(data) & length(cell.size)==1 & ccdist==cell.size[1]) {
-    outp=oneill(data)
+    outp=oneill(data, plotout=plotout)
     return(list(probabilities=outp$probabilities, leib=outp$oneill, rel.leib=outp$rel.oneill))
   }
 
@@ -318,6 +322,9 @@ leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
   leib.range=c(0, log(length(Xcat)^2))
   names(leib.range)=c("Min", "Max")
 
+  rm(datapairs)
+
+  if(plotout==T){
   if(spatstat.geom::is.ppp(data)){
     data.cat=data; spatstat.geom::marks(data.cat)=as.character(spatstat.geom::marks(data))
     spatstat.geom::plot.ppp(data.cat, cols=(1:(length(unique(spatstat.geom::marks(data.cat)))+1))[-2],
@@ -342,7 +349,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
                                   centre = spatstat.geom::centroid.owin(win)),
                              add=T, border=2, lwd=2)
 
-  }
+  }}
 
   return(list(leib=leib,
               range=leib.range,
@@ -373,6 +380,7 @@ leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
 #'
 #' @param data A data matrix or vector, can be numeric, factor, character, ...
 #' @param win Optional, an object of class \code{owin}, the observation window for data plotting
+#' @param plotout Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.
 #'
 #' @return a list of two elements:
 #' \itemize{
@@ -400,9 +408,10 @@ leibovici=function(data, cell.size=1, ccdist=cell.size[1], win=NULL, verbose=F)
 #'
 #' @export
 
-contagion=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(0, nrow(data))))
+contagion=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)),
+                                                 yrange=c(0, nrow(data))), plotout=T)
 {
-  outp=oneill(data, win)
+  outp=oneill(data, win, plotout=plotout)
   return(list(contagion=1-outp$rel.oneill,
               probabilities=outp$probabilities))
 }
@@ -426,6 +435,7 @@ contagion=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange
 #'
 #' @param data A data matrix or vector, can be numeric, factor, character, ...
 #' @param win Optional, an object of class \code{owin}, the observation window for data plotting
+#' @param plotout Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.
 #'
 #' @return a list of four elements:
 #' \itemize{
@@ -455,9 +465,10 @@ contagion=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange
 #'
 #' @export
 
-parredw=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)), yrange=c(0, nrow(data))))
+parredw=function(data, win=spatstat.geom::owin(xrange=c(0, ncol(data)),
+                                               yrange=c(0, nrow(data))), plotout=T)
 {
-  outp=oneill(data, win)
+  outp=oneill(data, win, plotout=plotout)
   parr.range=-rev(outp$range)
   names(parr.range)=c("Min", "Max")
   return(list(parredw=-outp$oneill,

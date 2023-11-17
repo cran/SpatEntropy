@@ -6,13 +6,16 @@
 \usage{
 parredw(
   data,
-  win = spatstat.geom::owin(xrange = c(0, ncol(data)), yrange = c(0, nrow(data)))
+  win = spatstat.geom::owin(xrange = c(0, ncol(data)), yrange = c(0, nrow(data))),
+  plotout = T
 )
 }
 \arguments{
 \item{data}{A data matrix or vector, can be numeric, factor, character, ...}
 
 \item{win}{Optional, an object of class \code{owin}, the observation window for data plotting}
+
+\item{plotout}{Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.}
 }
 \value{
 a list of four elements:

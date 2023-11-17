@@ -12,7 +12,8 @@ karlstrom(
   partition = 10,
   win = NULL,
   neigh = 4,
-  method = "number"
+  method = "number",
+  plotout = T
 )
 
 battyLISA(
@@ -22,7 +23,8 @@ battyLISA(
   partition = 10,
   win = NULL,
   neigh = 4,
-  method = "number"
+  method = "number",
+  plotout = T
 )
 }
 \arguments{
@@ -58,6 +60,8 @@ based on their centroids. Default to 4 neighbours.}
 
 \item{method}{Character, it guides the interpretation of \code{neigh}. Either "number" (the default)
 or "distance".}
+
+\item{plotout}{Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.}
 }
 \value{
 A list of five elements:

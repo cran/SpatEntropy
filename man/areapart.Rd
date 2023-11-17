@@ -4,7 +4,7 @@
 \alias{areapart}
 \title{Area partition.}
 \usage{
-areapart(data, G, cell.size = 1, win = NULL)
+areapart(data, G, cell.size = 1, win = NULL, plotout = T)
 }
 \arguments{
 \item{data}{If data are lattice, a data matrix, which can be numeric, factor, character, ...
@@ -22,6 +22,8 @@ and the observation area is extracted from the object. If data are
 given as a matrix and the area is not specified, the default is a
 rectangle with x range from 0 to the number of columns of the data, and
 y range from 0 to the number of rows of the data.}
+
+\item{plotout}{Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.}
 }
 \value{
 A list with elements:

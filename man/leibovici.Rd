@@ -4,7 +4,14 @@
 \alias{leibovici}
 \title{Leibovici's entropy.}
 \usage{
-leibovici(data, cell.size = 1, ccdist = cell.size[1], win = NULL, verbose = F)
+leibovici(
+  data,
+  cell.size = 1,
+  ccdist = cell.size[1],
+  win = NULL,
+  verbose = F,
+  plotout = T
+)
 }
 \arguments{
 \item{data}{If data are lattice, a data matrix, which can be numeric, factor, character, ...
@@ -19,6 +26,8 @@ if the pixel is rectangular, the first number gives the horizontal side and the 
 
 \item{verbose}{Logical. If \code{TRUE} an output is printed in order to follow the progress of the work (recommended for large dataset).
 Default set to \code{FALSE}.}
+
+\item{plotout}{Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.}
 }
 \value{
 a list of four elements:

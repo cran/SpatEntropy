@@ -46,6 +46,7 @@
 #'   Only the internal breaks have to be specified, the first and last break are automatically added as 0 and the maximum distance within the observation area, respectively.
 #' @param verbose Logical. If \code{TRUE} an output is printed in order to follow the progress of the work (recommended for large dataset).
 #'   Default set to \code{FALSE}.
+#' @param plotout Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.
 #'
 #' @return A list with elements:
 #'\itemize{
@@ -96,7 +97,7 @@
 #'
 #' @export
 
-altieri=function(data, cell.size=1, distbreak="default", verbose=F)
+altieri=function(data, cell.size=1, distbreak="default", verbose=F, plotout=T)
 {
   if(!is.matrix(data) & !spatstat.geom::is.ppp(data))
     stop("For grid data, please provide the dataset as a matrix;
@@ -332,6 +333,7 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
   RESprop = if(length(Xcat)>1) res.partial/(mut.partial+res.partial) else NA
 
   #barplot of PI and RES proportional terms
+  if(plotout==T){
   if(length(Xcat)>1){
     graphics::par(mar = c(5, 4, 2, 2) + 0.1)
     graphics::barplot(height = rbind(PIprop, RESprop), ylim=c(0, 1.2),
@@ -349,7 +351,7 @@ altieri=function(data, cell.size=1, distbreak="default", verbose=F)
 
     #legend("top", pch=2, col = c("darkgray", "white"),
     #       horiz=T, legend=c("Part. inform", "Part. resid"))
-  }
+  }}
 
   return(list("distance.breaks"=wks,
               "SPI.terms"=mut.partial,

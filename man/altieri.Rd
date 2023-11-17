@@ -4,7 +4,7 @@
 \alias{altieri}
 \title{Altieri's spatial entropy.}
 \usage{
-altieri(data, cell.size = 1, distbreak = "default", verbose = F)
+altieri(data, cell.size = 1, distbreak = "default", verbose = F, plotout = T)
 }
 \arguments{
 \item{data}{If data are lattice, a data matrix, which can be numeric, factor, character, ...
@@ -21,6 +21,8 @@ Only the internal breaks have to be specified, the first and last break are auto
 
 \item{verbose}{Logical. If \code{TRUE} an output is printed in order to follow the progress of the work (recommended for large dataset).
 Default set to \code{FALSE}.}
+
+\item{plotout}{Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.}
 }
 \value{
 A list with elements:

@@ -4,7 +4,15 @@
 \alias{batty}
 \title{Batty's entropy.}
 \usage{
-batty(data, category = 1, cell.size = 1, partition = 10, win = NULL)
+batty(
+  data,
+  category = 1,
+  cell.size = 1,
+  partition = 10,
+  win = NULL,
+  rescale = T,
+  plotout = T
+)
 }
 \arguments{
 \item{data}{If data are lattice, a data matrix, which can be numeric, factor, character, ...
@@ -33,6 +41,14 @@ and the observation area is extracted from the object. If data are
 given as a matrix, the area should be specified; the default is a
 rectangle with x range from 0 to the number of columns of the data, and
 y range from 0 to the number of rows of the data.}
+
+\item{rescale}{Logical. Default to \code{TRUE}, checks whether the size of the observation area or of any of the
+sub-areas is smaller than 1. If so, computational issues may arise due to negative logarithms, therefore the
+function automatically performs a rescaling of all sub-areas, computes the entropy over the rescaled area and
+then transforms it back to the entropy of the original dataset. In such case, a warning is produced to make the user
+aware of such operation.}
+
+\item{plotout}{Logical. Default to \code{TRUE}, produces an informative plot as part of the function output.}
 }
 \value{
 A list of five elements:
@@ -78,6 +94,10 @@ batty.entropy=batty(data, category="a")
 
 #unmarked pp
 data=ppp(x=runif(100, 0, 10), y=runif(100, 0, 10), window=square(10))
+batty.entropy=batty(data)
+
+#smaller window so that some areas' size are smaller than 1
+data=ppp(x=runif(100, 0, 3), y=runif(100, 0, 3), window=square(3))
 batty.entropy=batty(data)
 
 #marked pp
